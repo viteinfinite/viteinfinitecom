@@ -1,0 +1,57 @@
+---
+layout: page
+title: Posts
+background: '/img/bg-post.jpg'
+---
+
+{% for post in paginator.posts %}
+
+  <article class="post-preview">
+    {% assign word_count = post.content | number_of_words %}
+    <a href="{{ post.url | prepend: site.baseurl | replace: '//', '/' }}">
+      <h2 class="post-title">{{ post.title }}</h2>
+      {% if post.subtitle %}
+        <h3 class="post-subtitle">{{ post.subtitle }}</h3>
+      {% else %}
+        {% if word_count > 50 %}
+          <h3 class="post-subtitle">{{ post.excerpt | strip_html }}</h3>
+        {% else %}
+          {{ post.content }}
+        {% endif %}
+      {% endif %}
+    </a>
+    <p class="post-meta">
+      {% if post.author %}
+        Posted by {{ post.author }} on 
+      {% else %}
+        Posted on 
+      {% endif %}
+      {{ post.date | date: '%B %d, %Y' }}
+    </p>
+    {% if word_count > 50 %}
+    <p>
+      <a href="{{ post.url | prepend: site.baseurl | replace: '//', '/' }}">Continue reading...</a>
+    </p>
+    {% endif %}
+  </article>
+
+  <hr>
+
+{% endfor %}
+
+<!-- Pager -->
+{% if paginator.total_pages > 1 %}
+
+  <div class="clearfix">
+
+    {% if paginator.previous_page %}
+      <a class="btn btn-primary float-left" href="{{ paginator.previous_page_path | prepend: site.baseurl | replace: '//', '/' }}">&larr; Newer<span class="d-none d-md-inline"> Posts</span></a>
+    {% endif %}
+
+    {% if paginator.next_page %}
+      <a class="btn btn-primary float-right" href="{{ paginator.next_page_path | prepend: site.baseurl | replace: '//', '/' }}">Older<span class="d-none d-md-inline"> Posts</span> &rarr;</a>
+    {% endif %}
+
+  </div>
+
+{% endif %}

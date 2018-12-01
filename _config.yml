@@ -1,0 +1,20 @@
+title:             viteinfinite
+email:             viteinfinite@gmail.com
+description:       Minuscoli frammenti
+author:            Simone Civetta
+baseurl:           ""
+url:               "http://viteinfinite.com"
+excerpt_separator: <!--more-->
+
+# Social Profiles
+twitter_username:  viteinfinite
+github_username:   viteinfinite
+
+# Build settings
+markdown:          kramdown
+highlighter:       rouge
+paginate:          5
+paginate_path:     "/posts/page:num/"
+plugins:
+  - jekyll-feed
+  - jekyll-paginate
