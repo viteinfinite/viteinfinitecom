@@ -1,14 +1,13 @@
 # frozen_string_literal: true
 
 source "https://rubygems.org"
-gemspec
 
 gem "jekyll", "~> 3.7.0"
 
 group :jekyll_plugins do
-  gem "github-pages", "~> 193"
-  gem "jekyll-feed", "~> 0.6"
-  gem "jekyll-paginate", "~> 1.1.0"
+  gem "github-pages"
+  gem "jekyll-feed"
+  gem "jekyll-paginate"
   gem "kramdown"
   gem "rouge"
 end
