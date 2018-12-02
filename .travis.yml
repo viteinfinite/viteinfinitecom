@@ -1,4 +1,16 @@
-language: ruby
+title:             viteinfinite
+
+language:          ruby
 rvm:
-  - 2.5.1
-script: "bundle exec jekyll build"
+- 2.5.1
+script:            "bundle exec jekyll build"
+branches:
+  only:
+  - master
+
+before_script:
+ - chmod +x ./scripts/cibuild.sh
+
+script:            ./scripts/cibuild.sh
+exclude:           [vendor]
+sudo:              false
