@@ -2,7 +2,7 @@ title:             viteinfinite
 email:             viteinfinite@gmail.com
 description:       Minuscoli frammenti
 author:            Simone Civetta
-baseurl:           "/viteinfinitecom"
+baseurl:           ""
 url:               "http://viteinfinite.com"
 excerpt_separator: <!--more-->
 
