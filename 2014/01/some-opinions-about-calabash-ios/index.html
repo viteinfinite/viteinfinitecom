@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    Some opinions about Calabash-iOS - viteinfinite
+    
+  </title>
+
+  <meta name="description" content="For what concerns iOS my colleagues and I have been using Calabash-iOS for a year now, with mixed feelings. Here is a totally subjective opinion about Pros a...">
+
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/bootstrap/css/bootstrap.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/font-awesome/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/main.css">
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/rouge/syntax.css">
+  <link rel="canonical" href="http://viteinfinite.com/viteinfinitecom/2014/01/some-opinions-about-calabash-ios/">
+  <link rel="alternate" type="application/rss+xml" title="viteinfinite" href="/viteinfinitecom/feed.xml">
+
+</head>
+
+
+  <body>
+
+    <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/viteinfinitecom/">viteinfinite</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fa fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/posts">Posts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/contact">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+    <!-- Page Header -->
+
+<header class="masthead">
+
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="post-heading">
+          <h1>Some opinions about Calabash-iOS</h1>
+          
+
+          <span class="meta">
+                Posted on 
+              
+              January 31, 2014</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+
+      <p>For what concerns iOS my colleagues and I have been using Calabash-iOS for a year now, with mixed feelings.</p>
+
+<p>Here is a totally subjective opinion about Pros and Cons of Calabash-iOS</p>
+
+<!--more-->
+
+<h2 id="pros">Pros:</h2>
+
+<ul>
+  <li>Conciseness of the Gherkin language</li>
+  <li>Capability of querying webviews with CSS selectors</li>
+  <li>Access to all the object property values via Ruby</li>
+  <li>built-in Jenkins-Ready output (xml and HTML test reports, mainly)</li>
+  <li>Performance (on &lt;= iOS 6)</li>
+  <li>It does not uniquely rely on accessibilityIdentifiers (as KIF does)</li>
+  <li>Actively mantained</li>
+</ul>
+
+<h2 id="cons">Cons:</h2>
+
+<ul>
+  <li>It’s not an Apple-backed project : functionalities change significantly from OS to OS</li>
+  <li>Test fail randomly under certain circumstances and, in particular, when dealing with repeated scrolling on a UIScrollView (due to a poor implementation of the scroll/swipe functions)</li>
+  <li>On iOS 7, it relies on UIAutomation, thus…</li>
+  <li>…terrible performance on iOS 7 (see above)</li>
+  <li>Once again, quite a Pain-in-the-ass to make it work on iOS 7</li>
+  <li>Finding the good query for your element usually requires much trial-and-error via the calabash-ios console (Frank provides a nice UI tool for that task, but it’s not merged into Calabash-iOS yet)</li>
+</ul>
+
+<p>Truth to be told, at this stage, the performance impact of relying on UIAutomation is deal breaker for me, so, on the next project we’ll be using <a href="https://github.com/kif-framework/KIF">KIF</a>, which appears to be also used in <a href="http://googletesting.blogspot.fr/2013/08/how-google-team-tests-mobile-apps.html">some Google projects</a>.</p>
+
+
+      <hr>
+
+      
+      <div class="comments">
+        <div id="disqus_thread"></div>
+        <script>
+          var disqus_shortname = 'viteinfinite';
+          (function() {
+              var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+              dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+              (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </div>   
+                               
+
+      <div class="clearfix">
+
+        
+        <a class="btn btn-primary float-left" href="/viteinfinitecom/2013/09/how-to-resolve-unable-to-start-status-bar-server-when-launching-ghunit-tests-from-command-line-after-upgrading-to-xcode-5/" data-toggle="tooltip" data-placement="top" title="How to resolve “Unable to start status bar server” when launching GHUnit Tests from command line after upgrading to XCode 5">&larr; Previous<span class="d-none d-md-inline"> Post</span></a>
+        
+        
+        <a class="btn btn-primary float-right" href="/viteinfinitecom/2014/10/be-the-quality-you-want-to-see-in-the-world-code-quality-metrics/" data-toggle="tooltip" data-placement="top" title="Be the Quality you Want to See in the World – Code Quality Metrics">Next<span class="d-none d-md-inline"> Post</span> &rarr;</a>
+        
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+    <!-- Footer -->
+
+<hr>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <ul class="list-inline text-center">
+          
+          <li class="list-inline-item">
+            <a href="https://www.twitter.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          
+          <li class="list-inline-item">
+            <a href="https://github.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="copyright text-muted">Copyright &copy; Simone Civetta 2018 | Powered by <a href="https://github.com/BlackrockDigital/startbootstrap-clean-blog-jekyll/blob/master/README.md">Clean Blog</a> on <a href="https://jekyllrb.com">Jekyll</a></p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <script src="/viteinfinitecom/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/startbootstrap-clean-blog/js/clean-blog.min.js"></script>
+
+<script src="/viteinfinitecom/assets/scripts.js"></script>
+
+
+
+
+  </body>
+
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    About the Builder Pattern in Objective&amp;#8209;C - viteinfinite
+    
+  </title>
+
+  <meta name="description" content="When dealing with complex object creation in an iOS application you may feel the need for a cleaner and more fluent approach. During my latest development my...">
+
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/bootstrap/css/bootstrap.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/font-awesome/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/main.css">
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/rouge/syntax.css">
+  <link rel="canonical" href="http://viteinfinite.com/viteinfinitecom/2013/05/about-the-builder-pattern-in-objective-c/">
+  <link rel="alternate" type="application/rss+xml" title="viteinfinite" href="/viteinfinitecom/feed.xml">
+
+</head>
+
+
+  <body>
+
+    <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/viteinfinitecom/">viteinfinite</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fa fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/posts">Posts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/contact">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+    <!-- Page Header -->
+
+<header class="masthead">
+
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="post-heading">
+          <h1>About the Builder Pattern in Objective&#8209;C</h1>
+          
+
+          <span class="meta">
+                Posted on 
+              
+              May 25, 2013</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+
+      <p>When dealing with complex object creation in an iOS application you may feel the need for a cleaner and more fluent approach.</p>
+
+<p>During my latest development my colleague @alexiskinsella set up a pattern based on providers in order to mimic the factory behaviour we often find in languages such as Java.</p>
+
+<p>Recently, in the occasion of a side project, I am studying a slightly different approach, based on <a href="http://matthiaswessendorf.wordpress.com/2012/11/12/objective-c-builder-pattern-vs-configuration-objects/">this article</a> by Matthias Wessendorf.</p>
+
+<!--more-->
+
+<p>What I am willing to do is an image builder which creates UIImages on which a GPUImageFilter is applied.</p>
+
+<p>The result I came to is as follows:</p>
+
+<h1 id="the-builder-itself-implementation">The Builder itself (implementation)</h1>
+
+<pre class="toolbar-overlay:false plain:false lang:objc decode:true" title="The Builder itself">+ (SMFilteredImageBuilder *)builderWithConfigurationBlock:(FilteredImageConfigurationBlock)configBlock
+{
+    return [[self alloc] initWithConfigurationBlock:configBlock];
+}
+
+- (id)initWithConfigurationBlock:(FilteredImageConfigurationBlock)configBlock
+{
+    if (self = [super init]) {
+        self.configuration = [SMFilteredImageConfiguration configuration];
+        if (configBlock) {
+            configBlock(self.configuration);
+        }
+    }
+
+    return self;
+}
+
+- (UIImage *)build
+{
+    [self.configuration.imagePicture processImage];
+    return [self.configuration.filter imageFromCurrentlyProcessedOutput];
+}</pre>
+
+<h1 id="the-configuration-objectheader">The Configuration object (header)</h1>
+
+<pre class="toolbar-overlay:false plain:false lang:objc decode:true" title="The Configuration object (header)">@interface SMFilteredImageConfiguration : NSObject
+
+@property GPUImageFilter *filter;
+@property GPUImagePicture *imagePicture;
+
++ (instancetype)configuration;
+
+@end</pre>
+
+<h1 id="using-a-builder-with-an-inline-configuration"> Using a Builder with an inline Configuration</h1>
+
+<pre class="toolbar-overlay:false plain:false lang:objc decode:true" title="Using a builder with configuration">- (void)saveFilteredImage:(UIImage *)image
+{
+    SMFilteredImageBuilder *imageBuilder = [SMFilteredImageBuilder builderWithConfigurationBlock:^(SMFilteredImageConfiguration *configuration){
+        GPUImagePicture *sourceImagePicture = [[GPUImagePicture alloc] initWithImage:image];
+        configuration.filter = [GPUImageFilter filterForSquaredImageFromImagePicture:sourceImagePicture withSide:100.0];
+        configuration.imagePicture = sourceImagePicture;
+    }];
+
+    UIImage *filteredImage = [imageBuilder build];
+    [filteredImage saveToDocumentsFolderWithName:@"Filtered.png"];
+}</pre>
+
+<p>This should make for a quite readable code with a reduced number of lines of code in the method that invokes the builder.</p>
+
+
+      <hr>
+
+      
+      <div class="comments">
+        <div id="disqus_thread"></div>
+        <script>
+          var disqus_shortname = 'viteinfinite';
+          (function() {
+              var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+              dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+              (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </div>   
+                               
+
+      <div class="clearfix">
+
+        
+        <a class="btn btn-primary float-left" href="/viteinfinitecom/2013/05/how-to-add-custom-environment-variables-in-xcode-and-cocoapods/" data-toggle="tooltip" data-placement="top" title="How to add custom environment variables in Xcode and CocoaPods">&larr; Previous<span class="d-none d-md-inline"> Post</span></a>
+        
+        
+        <a class="btn btn-primary float-right" href="/viteinfinitecom/2013/06/introducing-smwheelcontrol/" data-toggle="tooltip" data-placement="top" title="Introducing SMWheelControl">Next<span class="d-none d-md-inline"> Post</span> &rarr;</a>
+        
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+    <!-- Footer -->
+
+<hr>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <ul class="list-inline text-center">
+          
+          <li class="list-inline-item">
+            <a href="https://www.twitter.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          
+          <li class="list-inline-item">
+            <a href="https://github.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="copyright text-muted">Copyright &copy; Simone Civetta 2018 | Powered by <a href="https://github.com/BlackrockDigital/startbootstrap-clean-blog-jekyll/blob/master/README.md">Clean Blog</a> on <a href="https://jekyllrb.com">Jekyll</a></p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <script src="/viteinfinitecom/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/startbootstrap-clean-blog/js/clean-blog.min.js"></script>
+
+<script src="/viteinfinitecom/assets/scripts.js"></script>
+
+
+
+
+  </body>
+
+</html>

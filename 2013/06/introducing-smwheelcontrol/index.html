@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    Introducing SMWheelControl - viteinfinite
+    
+  </title>
+
+  <meta name="description" content="Today I am proud to announce the availability of a new Pod for iOS which will be included in my forthcoming app. SMWheelControl an iOS control allowing the s...">
+
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/bootstrap/css/bootstrap.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/font-awesome/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/main.css">
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/rouge/syntax.css">
+  <link rel="canonical" href="http://viteinfinite.com/viteinfinitecom/2013/06/introducing-smwheelcontrol/">
+  <link rel="alternate" type="application/rss+xml" title="viteinfinite" href="/viteinfinitecom/feed.xml">
+
+</head>
+
+
+  <body>
+
+    <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/viteinfinitecom/">viteinfinite</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fa fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/posts">Posts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/contact">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+    <!-- Page Header -->
+
+<header class="masthead">
+
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="post-heading">
+          <h1>Introducing SMWheelControl</h1>
+          
+
+          <span class="meta">
+                Posted on 
+              
+              June 10, 2013</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+
+      <p>Today I am proud to announce the availability of a new Pod for iOS which will be included in my forthcoming app.</p>
+
+<h1 id="smwheelcontrol"><strong>SMWheelControl</strong></h1>
+
+<p>an iOS control allowing the selection of an item from a 360° spinning wheel with a smooth inertial rotation.</p>
+
+<!--more-->
+
+<p>The code, released under the BSD 3-clause license, is loosely based on the tutorial “How To Create a Rotating Wheel Control with UIKit” published on <a href="http://www.raywenderlich.com/9864/how-to-create-a-rotating-wheel-control-with-uikit">this Ray Wenderlich’s post</a> by <a href="http://twitter.com/@_funkyboy">Cesare Rocchi</a></p>
+
+<p>As usual, you can insert it into your podfile by adding</p>
+
+<pre class="font-size:16 show-lang:2 lang:ruby decode:true">pod "SMWheelControl", "0.1.1"</pre>
+
+<p>Some howto follows.</p>
+
+<h1 id="usage">Usage</h1>
+
+<h2 id="initialization-and-data-source"><a href="https://github.com/viteinfinite/SMWheelControl#initialization-and-data-source" name="initialization-and-data-source"></a>Initialization and data source</h2>
+
+<p>Instantiate the control with a classical <code class="highlighter-rouge">- (id)initWithFrame:(CGRect)rect</code> and add a target as you usually do with a control, e.g.:</p>
+
+<div>
+  <pre class="crayon-selected">SMWheelControl *wheel = [[SMWheelControl alloc] initWithFrame:CGRectMake(0, 0, 320, 320)];
+[wheel addTarget:self action:@selector(wheelDidChangeValue:) forControlEvents:UIControlEventValueChanged];</pre>
+</div>
+
+<p>Then add a dataSource:</p>
+
+<div>
+  <pre>wheel.dataSource = self;
+[wheel reloadData];</pre>
+</div>
+
+<p>and implement the following methods (the dataSource should conform to the <code class="highlighter-rouge">SMWheelControlDataSource</code>):</p>
+
+<div>
+  <pre>- (UIView *)wheel:(SMWheelControl *)wheel viewForSliceAtIndex:(NSUInteger)index;
+- (NSUInteger)numberOfSlicesInWheel:(SMWheelControl *)wheel;</pre>
+</div>
+
+<p>For instance:</p>
+
+<div>
+  <pre>- (NSUInteger)numberOfSlicesInWheel:(SMWheelControl *)wheel
+{
+    return 10;
+}
+
+- (UIView *)wheel:(SMWheelControl *)wheel viewForSliceAtIndex:(NSUInteger)index
+{
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 150, 30)];
+    label.backgroundColor = [UIColor whiteColor];
+    label.text = [NSString stringWithFormat:@" %d", index];
+    return label;
+}</pre>
+</div>
+
+<p>When the wheel ends snapping to the closest slice, if you added a target, then it will receive the event <code class="highlighter-rouge">UIControlEventValueChanged</code>, and the selector you specified will be executed.</p>
+
+<div>
+  <pre>- (void)wheelDidChangeValue:(id)sender
+{
+    self.valueLabel.text = [NSString stringWithFormat:@"%d", self.wheel.selectedIndex];
+}</pre>
+</div>
+
+
+      <hr>
+
+      
+      <div class="comments">
+        <div id="disqus_thread"></div>
+        <script>
+          var disqus_shortname = 'viteinfinite';
+          (function() {
+              var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+              dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+              (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </div>   
+                               
+
+      <div class="clearfix">
+
+        
+        <a class="btn btn-primary float-left" href="/viteinfinitecom/2013/05/about-the-builder-pattern-in-objective-c/" data-toggle="tooltip" data-placement="top" title="About the Builder Pattern in Objective&#8209;C">&larr; Previous<span class="d-none d-md-inline"> Post</span></a>
+        
+        
+        <a class="btn btn-primary float-right" href="/viteinfinitecom/2013/06/rediscovering-uicollectionviews/" data-toggle="tooltip" data-placement="top" title="(Re)discovering UICollectionViews">Next<span class="d-none d-md-inline"> Post</span> &rarr;</a>
+        
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+    <!-- Footer -->
+
+<hr>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <ul class="list-inline text-center">
+          
+          <li class="list-inline-item">
+            <a href="https://www.twitter.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          
+          <li class="list-inline-item">
+            <a href="https://github.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="copyright text-muted">Copyright &copy; Simone Civetta 2018 | Powered by <a href="https://github.com/BlackrockDigital/startbootstrap-clean-blog-jekyll/blob/master/README.md">Clean Blog</a> on <a href="https://jekyllrb.com">Jekyll</a></p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <script src="/viteinfinitecom/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/startbootstrap-clean-blog/js/clean-blog.min.js"></script>
+
+<script src="/viteinfinitecom/assets/scripts.js"></script>
+
+
+
+
+  </body>
+
+</html>

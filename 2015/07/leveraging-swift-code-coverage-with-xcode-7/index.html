@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    Leveraging Swift Code Coverage with Xcode 7 - viteinfinite
+    
+  </title>
+
+  <meta name="description" content="One of the WWDC 2015 announcements that surprised interested us the most has definitely been the support for code coverage for the Swift language. In this ar...">
+
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/bootstrap/css/bootstrap.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/font-awesome/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/main.css">
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/rouge/syntax.css">
+  <link rel="canonical" href="http://viteinfinite.com/viteinfinitecom/2015/07/leveraging-swift-code-coverage-with-xcode-7/">
+  <link rel="alternate" type="application/rss+xml" title="viteinfinite" href="/viteinfinitecom/feed.xml">
+
+</head>
+
+
+  <body>
+
+    <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/viteinfinitecom/">viteinfinite</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fa fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/posts">Posts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/contact">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+    <!-- Page Header -->
+
+<header class="masthead">
+
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="post-heading">
+          <h1>Leveraging Swift Code Coverage with Xcode 7</h1>
+          
+
+          <span class="meta">
+                Posted on 
+              
+              July 24, 2015</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+
+      <p>One of the WWDC 2015 announcements that <del>surprised</del> interested us the most has definitely been the support for <strong>code coverage for the Swift language</strong>.</p>
+
+<p>In this article we will understand the advantages of the new code coverage functionality introduced in Xcode 7 and how to integrate such KPI in our daily work.</p>
+
+<!--more-->
+
+<hr />
+
+<blockquote>
+  <p>French speakers: the original version of this article is actually French, and you can <a href="http://blog.xebia.fr/2015/07/20/exploitons-la-couverture-de-code-en-swift/">read it on Xebia’s excellent blog</a>.</p>
+</blockquote>
+
+<blockquote>
+  <p>Also, this article is the text version of the talk “Leveraging Xcode Code Coverage”, presented at the <a href="https://mo.dev.by">Mobile Optimized conference in Minsk</a>, whose <a href="https://speakerdeck.com/viteinfinite/leveraging-xcode-code-coverage">slides are available here</a>.</p>
+</blockquote>
+
+<hr />
+
+<p>Code coverage is a metric that measures the value of our tests by identifying what code is executed when running them and, above all, what portions of our project are untested.</p>
+
+<h2 id="how-it-works">How it works?</h2>
+
+<p>The production of code coverage information is done in two passes:</p>
+
+<ol>
+  <li>At compile time, the compiler prepares the files for analysis</li>
+  <li>At runtime, the lines of code affected by the tests are annotated in a specific file</li>
+</ol>
+
+<h1 id="xcode-code-coverage-before-june-2015">Xcode code coverage before June 2015</h1>
+
+<p><span style="line-height: 1.714285714; font-size: 1rem;">Before WWDC 2015, only the Objective-C code coverage was supported by Apple’s tools, while Swift had been left behind. Also, the Objective-C support was sometimes inconsistent and required a few tricks to get the information.</span></p>
+
+<h2 id="how-did-it-work">How did it work?</h2>
+
+<p>The procedure necessary to retrieve the information was a variant of the one used by gcov, included in the gcc tools. Two settings had to be added to the Build Settings:</p>
+
+<ol>
+  <li><em>Generate test coverage files</em>, which corresponds to the <span class="lang:default decode:true  crayon-inline">-ftest-coverage</span> gcc flag</li>
+  <li><em>Instrument program flow</em>, corresponding to <span class="lang:default decode:true  crayon-inline ">-fprofile-arcs</span></li>
+</ol>
+
+<p>The former allows the creation of the <em>.gcno</em> files, which contain the information needed to build the execution graph and reconstruct the line numbers.</p>
+
+<p>The latter, <em>Instrument program flow</em>, deals with the creation oft the <em>.gcda</em> files, which contain the number of transitions on different arcs of the graph and other summary information.</p>
+
+<p>In order to force the generation of these command line data, it was possible to use the following command:</p>
+
+<pre class="lang:sh decode:true">GCC_INSTRUMENT_PROGRAM_FLOW_ARCS=YES
+    GCC_GENERATE_TEST_COVERAGE_FILES= YES
+    xcodebuild [...]
+    test
+</pre>
+
+<h2 id="exploiting-the-data">Exploiting the data</h2>
+
+<p>A number of tools for reading and exporting reports exist, but in particular, we used the following:</p>
+
+<ul>
+  <li><strong>Coverstory</strong>, a GUI tool to read files “.gcda” and “.gcno”</li>
+  <li><strong>gcovr</strong> translates these files Cobertura XML format</li>
+  <li><strong>lcov</strong> generates a visual report in a navigable HTML</li>
+  <li>and, especially, <strong>Slather</strong>.</li>
+</ul>
+
+<h3 id="slather">Slather</h3>
+
+<p>Slather, developed by the SF-based company Venmo, exports the code coverage data in a number of different formats, including Gutter JSON, Cobertura XML, HTML and plain text. In addition, it integrates easily with other platforms, such as Jenkins, Travis CI, Circle CI and coveralls.</p>
+
+<p>As said, one of the major assets of Slather is its ease of configuration and integration within a continuous integration system. Slather is open source, and available here at <a href="http://github.com/venmo/Slather">Venmo’s GitHub repo</a>.</p>
+
+<h3 id="swiftcov">Swiftcov</h3>
+
+<p>A recent tool for collecting Swift coverage information is <a href="https://github.com/realm/SwiftCov">Swiftcov</a>, developed by the guys at Realm. Swiftcov makes heavy use of LLDB breakpoints to detect which lines are affected by the execution of our tests.</p>
+
+<h1 id="code-coverage-after-june-2015">Code coverage after June 2015</h1>
+
+<p>During the WWDC 2015 keynote, Apple announced that Xcode 7 would introduce support of code coverage for our beloved Swift.</p>
+
+<h2 id="how-does-it-work">How does it work?</h2>
+
+<p>A completely new format has been introduced, named profdata, thus making</p>
+
+<p>gcov legacy – at least for what concerns projects developed with Apple’s development tools.</p>
+
+<p>In other words, starting from the very first beta of Xcode 7, profdata is intended to replace completely gcov for both Swift and Objective-C.</p>
+
+<p>In order to enable the setting, from Xcode 7, you will need to access the “scheme” setting and, in the “Test” tab, to tick the “Gather coverage data” checkbox.</p>
+
+<p><img src="http://viteinfinite.com/wp-content/uploads/2015/07/collect_coverage_annotated.png" alt="" /></p>
+
+<p>As for the command line, xcodebuild now ships with a new parameter, <span class="lang:default decode:true  crayon-inline">-enableCodeCoverage</span>, which can be used as follows:</p>
+
+<pre class="lang:sh decode:true">xcodebuild
+    -scheme MoDevByProject
+    -destination "name=iPhone 6,OS=latest"
+    -enableCodeCoverage YES
+    test
+</pre>
+
+<p>Once the tests run, coverage information is immediately available in Xcode, on the right side of the code editor (see image below) and, in particular, in the “Report Navigator”.</p>
+
+<p><img src="http://viteinfinite.com/wp-content/uploads/2015/07/Screen-Shot-2015-07-24-at-15.03.52.png" alt="" />
+<em>Inline code coverage information</em></p>
+
+<p><img src="http://viteinfinite.com/wp-content/uploads/2015/07/Screen-Shot-2015-07-14-at-11.41.36.png" alt="" />
+<em>The new Report Navigator</em></p>
+
+<p>The Report Navigator shows in detail which classes are covered by our tests and, by expanding the selection, which methods are actually used.</p>
+
+<h2 id="exploiting-the-data-1">Exploiting the data</h2>
+
+<p>Apple’s work hasn’t only consisted in enhancing Xcode but, also, in extending the features of the  <span class="lang:default decode:true  crayon-inline">llvm-cov</span> command line tool, which allows working with .profdata format.</p>
+
+<p>The <span class="lang:default decode:true  crayon-inline ">llvm-cov show</span> command, for instance, allows exporting plain text coverage information and outputs annotated source code files, which can be easily read and processed.</p>
+
+<h3 id="slather-returns">Slather (returns)</h3>
+
+<p><a href="https://github.com/venmo/slather/pull/92">A recent Pull Request</a> allows Slather to work with profdata files and convert them to other formats, thus enabling the integration with the other platforms supported by the tool.</p>
+
+<h3 id="xcode-server">Xcode Server</h3>
+
+<p>If you are thinking about setting up an automated integration system, aside from the excellent Jenkins, Travis or Circle CI, it is perhaps time to start taking into consideration Xcode Server, which is part of the OS X Server bundle, distributed free of charge by Apple.</p>
+
+<p>With the new version of Xcode bots and Xcode Server, it is now possible to support code coverage values ​​and to display the results in a Web browser. The reports are also available in the “Big Screen” presentation, useful for presenting your content in a simplified yet effective overview.</p>
+
+<p>In order to enable this workflow, you could follow the steps below:</p>
+
+<ol>
+  <li>Install OS X server</li>
+  <li>Enable “Xcode” and “Websites” services</li>
+  <li>Create a new project and assign a Source Control Manager to it (such as git)</li>
+  <li>In Xcode, create an Xcode bot under “Product &gt; Create Bot”</li>
+  <li>Select the frequency of integration and enable code coverage (see image below) next to the caption “Code Coverage”.</li>
+  <li>Launch an integration</li>
+  <li>Open the web browser at the host indicated by your instance of Mac OS.</li>
+</ol>
+
+<p><img src="http://viteinfinite.com/wp-content/uploads/2015/07/bot_coverage.png" alt="" />
+<em>Xcode Bot creation panel</em></p>
+
+<h1 id="conclusion">Conclusion</h1>
+
+<p>Code coverage is very useful to keep under control your code base health status. Although it can not replace your developer confidence in well designed, well structured apps, this metric can help write better code by encouraging you to give yourself concrete goals day by day.</p>
+
+<p>Also, and finally, the new tools offered by Apple can now allow you to keep under control these values ​​in minutes, with a simple and immediate configuration.</p>
+
+
+      <hr>
+
+      
+      <div class="comments">
+        <div id="disqus_thread"></div>
+        <script>
+          var disqus_shortname = 'viteinfinite';
+          (function() {
+              var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+              dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+              (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </div>   
+                               
+
+      <div class="clearfix">
+
+        
+        <a class="btn btn-primary float-left" href="/viteinfinitecom/2015/02/carthage/" data-toggle="tooltip" data-placement="top" title="Carthage">&larr; Previous<span class="d-none d-md-inline"> Post</span></a>
+        
+        
+        <a class="btn btn-primary float-right" href="/viteinfinitecom/2017/02/swift-on-the-raspberry-pi-part-1/" data-toggle="tooltip" data-placement="top" title="Swift on the Raspberry PI">Next<span class="d-none d-md-inline"> Post</span> &rarr;</a>
+        
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+    <!-- Footer -->
+
+<hr>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <ul class="list-inline text-center">
+          
+          <li class="list-inline-item">
+            <a href="https://www.twitter.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          
+          <li class="list-inline-item">
+            <a href="https://github.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="copyright text-muted">Copyright &copy; Simone Civetta 2018 | Powered by <a href="https://github.com/BlackrockDigital/startbootstrap-clean-blog-jekyll/blob/master/README.md">Clean Blog</a> on <a href="https://jekyllrb.com">Jekyll</a></p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <script src="/viteinfinitecom/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/startbootstrap-clean-blog/js/clean-blog.min.js"></script>
+
+<script src="/viteinfinitecom/assets/scripts.js"></script>
+
+
+
+
+  </body>
+
+</html>

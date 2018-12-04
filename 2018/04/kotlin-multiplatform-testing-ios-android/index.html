@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    Kotlin Multiplatform: testing a shared module supporting iOS and Android - viteinfinite
+    
+  </title>
+
+  <meta name="description" content="Conceiving your app as modular can be greatly beneficial to your codebase’s health. In particular, designing a separation between your view and business logi...">
+
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/bootstrap/css/bootstrap.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/font-awesome/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/main.css">
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/rouge/syntax.css">
+  <link rel="canonical" href="http://viteinfinite.com/viteinfinitecom/2018/04/kotlin-multiplatform-testing-ios-android/">
+  <link rel="alternate" type="application/rss+xml" title="viteinfinite" href="/viteinfinitecom/feed.xml">
+
+</head>
+
+
+  <body>
+
+    <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/viteinfinitecom/">viteinfinite</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fa fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/posts">Posts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/contact">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+    <!-- Page Header -->
+
+<header class="masthead">
+
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="post-heading">
+          <h1>Kotlin Multiplatform: testing a shared module supporting iOS and Android</h1>
+          
+
+          <span class="meta">
+                Posted on 
+              
+              April 15, 2018</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+
+      <p>Conceiving your app as modular can be greatly beneficial to your codebase’s health. In particular, designing a separation between your view and business logic can decrease the coupling between your layers and improve maintainability as well as testability. Tests are indeed your app’s best friends, as they can, at the same time, verify the code you wrote works as intended and act as a specification for the implemented functionality.</p>
+
+<!--more-->
+
+<hr />
+
+<blockquote>
+  <p>🇫🇷 <em>Parlez-vous Français</em> ? You can read a <a href="https://blog.xebia.fr/2018/04/11/tester-un-projet-kotlin-multiplatform/">French Version of this post</a> on our blog at <a href="http://blog.xebia.fr">Xebia France</a>.</p>
+</blockquote>
+
+<hr />
+
+<p>When it comes to Multiplatform, Kotlin provides an interesting solution for testing your logic: in this configuration, every written test is executed against each one of your targeted platform.</p>
+
+<p>In other words, given you target are Android and iOS (via <a href="https://kotlinlang.org/docs/reference/native-overview.html">Kotlin/Native</a>), your tests will be compiled and launched in both the JVM and the native runtime.</p>
+
+<p>The setup of unit tests for Multiplatform can be tricky, though. Let’s see how to get a working configuration.</p>
+
+<p>In order to do this, we’ll proceed from <a href="http://viteinfinite.com/2018/03/sharing-frameworks-between-ios-and-android-with-kotlin-multiplatform/">where we left in our last post</a>.</p>
+
+<p>As you might recall, our module did nothing more than producing two strings, <code class="highlighter-rouge">bar-android</code> and <code class="highlighter-rouge">bar-ios</code> for Android and iOS respectively. Thanks to test in Kotlin Multiplatform we’ll be able to verify that, no matter the targeted platform, the produced value starts with <code class="highlighter-rouge">bar-</code>.</p>
+
+<h2 id="writing-our-test">Writing our Test</h2>
+
+<blockquote>
+  <p>The full code for this article is available in the <a href="https://github.com/xebia-france/kotlin-ios-framework/tree/feature/multiplatform">feature/multiplatform branch of our kotlin-ios-framework repository</a>.</p>
+</blockquote>
+
+<p>So, time to create a new file. First of all, let’s create a folder holding our test: <em>myframework/src/test/kotlin/fr/xebia/myframework/</em>. As you would expect, the path mirrors the one containing our implementation under test. In this directory we’ll create a new test class, <code class="highlighter-rouge">TestFoo</code>, whose contents are as follows:</p>
+
+<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">package</span> <span class="nn">fr.xebia.myframework</span>
+<span class="k">import</span> <span class="nn">kotlin.test.*</span>
+
+<span class="kd">class</span> <span class="nc">TestFoo</span> <span class="p">{</span>
+
+    <span class="c1">// The “@Test” annotation allows Kotlin to recognise the following function as a test
+</span>    <span class="n">@Test</span>
+    <span class="k">fun</span> <span class="nf">testBar</span><span class="p">()</span> <span class="p">{</span>
+        <span class="kd">val</span> <span class="py">foo</span> <span class="p">=</span> <span class="n">Foo</span><span class="p">()</span>
+
+        <span class="c1">// The assert to be verified
+</span>        <span class="n">assertTrue</span> <span class="p">{</span>
+            <span class="n">foo</span><span class="p">.</span><span class="n">bar</span><span class="p">().</span><span class="n">startsWith</span><span class="p">(</span><span class="s">"bar-"</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>As you can see, Kotlin comes with a testing and assertion framework, so no need to declare another dependency to your project.</p>
+
+<p>Of course, for tests to be run, we need to edit our <code class="highlighter-rouge">build.gradle</code> files. Let’s start with the common project’s: it should declare two additional <em>dependencies</em>: <code class="highlighter-rouge">kotlin-test-common</code> and <code class="highlighter-rouge">kotlin-test-annotations</code>.</p>
+
+<p>Please note that, in Kotlin Multiplatform, since tests can be only run against a specific target platform (such as Android’s JVM), <code class="highlighter-rouge">kotlin-test-common</code> will not suffice to be running your verification logic, but acts as a placeholder for an actual testing framework such as JUnit.</p>
+
+<p>As a proof, we can already try compiling the tests, which action will produce a build error, as the platform target won’t know how to interpret annotations and assertions.</p>
+
+<h2 id="buildgradle-for-android"><code class="highlighter-rouge">build.gradle</code> for Android</h2>
+
+<p>Quite unsurprisingly, we’ll have to edit the build.gradle file for the Android project as well. Similarly to the build file included in the common project, the Android’s should declare additional dependencies, needed for testing: JUnit, <code class="highlighter-rouge">kotlin-test-junit</code> and <code class="highlighter-rouge">kotlin-test</code>. Those dependencies contain the actual frameworks that will be executing during the execution of your tests.</p>
+
+<h2 id="buildgradle-for-kotlinnative"><code class="highlighter-rouge">build.gradle</code> for Kotlin/Native</h2>
+
+<p>Last but not least, let’s configure the gradle file for the Kotlin/Native project used on iOS, which setup is definitely trickier.</p>
+
+<p>In the current version of Kotlin/Native, in order for tests to be launched, we’ll have to create a “dummy” program that will hold both our “main” and “test” code and that will be executed when running the “test” task with gradle.</p>
+
+<p>To do so, let’s then add a new program in the build.gradle file contained in our myframework-ios folder:</p>
+
+<div class="language-groovy highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">program</span><span class="o">(</span><span class="s1">'shared-ios-test'</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">srcDir</span> <span class="s1">'src/main/kotlin'</span>
+    <span class="n">srcDir</span> <span class="s1">'src/test/kotlin'</span>
+    <span class="n">commonSourceSets</span> <span class="s1">'main'</span><span class="o">,</span> <span class="s1">'test'</span>
+    <span class="n">extraOpts</span> <span class="s1">'-tr'</span>
+
+    <span class="n">enableMultiplatform</span> <span class="kc">true</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>Second, we need to ask gradle to run the program upon launch of the “test” task. To do so we’ll have to add a new task, at the bottom of the file:</p>
+
+<div class="language-groovy highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">task</span> <span class="nf">test</span><span class="o">(</span><span class="nl">dependsOn:</span> <span class="n">run</span><span class="o">)</span>
+</code></pre></div></div>
+
+<p>When running <code class="highlighter-rouge">gradle test</code>, our program will compile, get executed and produce the following output:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[==========]</span> Running 1 tests from 1 <span class="nb">test </span>cases.
+<span class="o">[</span><span class="nt">----------</span><span class="o">]</span> Global <span class="nb">test </span>environment set-up.
+<span class="o">[</span><span class="nt">----------</span><span class="o">]</span> 1 tests from fr.xebia.myframework.TestFoo
+<span class="o">[</span> RUN      <span class="o">]</span> fr.xebia.myframework.TestFoo.testBar
+<span class="o">[</span>       OK <span class="o">]</span> fr.xebia.myframework.TestFoo.testBar <span class="o">(</span>0 ms<span class="o">)</span>
+<span class="o">[</span><span class="nt">----------</span><span class="o">]</span> 1 tests from fr.xebia.myframework.TestFoo <span class="o">(</span>0 ms total<span class="o">)</span>
+<span class="o">[</span><span class="nt">----------</span><span class="o">]</span> Global <span class="nb">test </span>environment tear-down
+<span class="o">[==========]</span> 1 tests from 1 <span class="nb">test </span>cases ran. <span class="o">(</span>0 ms total<span class="o">)</span>
+<span class="o">[</span>  PASSED  <span class="o">]</span> 1 tests.
+</code></pre></div></div>
+
+<p>Once again, you can grab the full code for this article from <a href="https://github.com/xebia-france/kotlin-ios-framework/tree/feature/multiplatform">the feature/multiplatform branch of our kotlin-ios-framework repository</a>.</p>
+
+<h2 id="going-further">Going Further</h2>
+
+<p>A nice feature of such configuration is that we can add specific tests for each platform. For instance, in case we want to add a more detailed test for our Kotlin/Native target, we’ll just need to create a new test folder in the myframework-ios subproject – without forgetting to add such folder as <code class="highlighter-rouge">srcDir</code> inside the <code class="highlighter-rouge">build.gradle</code> file.</p>
+
+<h2 id="wrapping-up">Wrapping Up</h2>
+
+<p>As seen in this post, configuring a test environment for Multiplatform tests is just a matter of adding a few lines of code. Once we get the right setup, tests will be run on all the targeted platforms with little effort.</p>
+
+
+      <hr>
+
+      
+      <div class="comments">
+        <div id="disqus_thread"></div>
+        <script>
+          var disqus_shortname = 'viteinfinite';
+          (function() {
+              var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+              dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+              (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </div>   
+                               
+
+      <div class="clearfix">
+
+        
+        <a class="btn btn-primary float-left" href="/viteinfinitecom/2018/03/sharing-frameworks-between-ios-and-android-with-kotlin-multiplatform/" data-toggle="tooltip" data-placement="top" title="Sharing frameworks between iOS and Android with Kotlin Multiplatform">&larr; Previous<span class="d-none d-md-inline"> Post</span></a>
+        
+        
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+    <!-- Footer -->
+
+<hr>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <ul class="list-inline text-center">
+          
+          <li class="list-inline-item">
+            <a href="https://www.twitter.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          
+          <li class="list-inline-item">
+            <a href="https://github.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="copyright text-muted">Copyright &copy; Simone Civetta 2018 | Powered by <a href="https://github.com/BlackrockDigital/startbootstrap-clean-blog-jekyll/blob/master/README.md">Clean Blog</a> on <a href="https://jekyllrb.com">Jekyll</a></p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <script src="/viteinfinitecom/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/startbootstrap-clean-blog/js/clean-blog.min.js"></script>
+
+<script src="/viteinfinitecom/assets/scripts.js"></script>
+
+
+
+
+  </body>
+
+</html>

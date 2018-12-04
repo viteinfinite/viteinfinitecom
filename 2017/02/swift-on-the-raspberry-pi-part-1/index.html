@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    Swift on the Raspberry PI - viteinfinite
+    
+  </title>
+
+  <meta name="description" content="In this article we will discover how to use the Swift programming language to write software running on our Raspberry PI. We’ll be reading and writing throug...">
+
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/bootstrap/css/bootstrap.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/font-awesome/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/main.css">
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/rouge/syntax.css">
+  <link rel="canonical" href="http://viteinfinite.com/viteinfinitecom/2017/02/swift-on-the-raspberry-pi-part-1/">
+  <link rel="alternate" type="application/rss+xml" title="viteinfinite" href="/viteinfinitecom/feed.xml">
+
+</head>
+
+
+  <body>
+
+    <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/viteinfinitecom/">viteinfinite</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fa fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/posts">Posts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/contact">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+    <!-- Page Header -->
+
+<header class="masthead">
+
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="post-heading">
+          <h1>Swift on the Raspberry PI</h1>
+          
+
+          <span class="meta">
+                Posted on 
+              
+              February 08, 2017</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+
+      <p>In this article we will discover how to use the Swift programming language to write software running on our Raspberry PI. We’ll be reading and writing through the GPIO of our board, connecting a number of widely available components and, at the same time, interacting with a remote sever.</p>
+
+<p>Here, I’ll be covering how to get started with Swift on a Raspberry PI board.</p>
+
+<!--more-->
+
+<p>Swift is a programming language released by Apple in 2014 which has received an ever increasing interest from the mobile community, thanks to its modern patterns, its static typing and its performances.</p>
+
+<p>Since October 2015, Swift has been Open Sourced and it can now run on a plethora of Linux distributions, making it an interesting, even though experimental, for the development of Server-Side Software.</p>
+
+<p>Even if, once released, Swift for Linux only was able to run on x86 Hardware only, after some efforts from the community, the language can be compiled, and compile, on ARM machines, such as the really popular Raspberry PI (and its clones), C.H.I.P., and many others.</p>
+
+<p>The most straightforward way to have Swift running on a ARM Linux distribution is to start from the most widespread of them: Ubuntu. The popular operating system now ships a version specifically built for our favourite single-board computer, named Ubuntu Core. With the words of its own maker, Ubuntu Core is « a tiny, transactional version of Ubuntu for IoT devices and large container deployments. It runs […] secure, remotely upgradeable Linux app packages known as snaps. ». In this series we won’t be using Snaps, but we will instead make use of the traditional layer of Ubuntu, called “classic”.</p>
+
+<p>The introduction is now over, let’s get started!</p>
+
+<h2 id="0-requirements">0. Requirements</h2>
+
+<p>In order to complete this tutorial, we need:</p>
+
+<ul>
+  <li>A Micro-SD card of at least 8GB of size (16GB recommended for building Swift from sources)</li>
+  <li>A Raspberry PI 3</li>
+  <li>An Ubuntu SSO Account, used to complete the setup of Ubuntu Core.</li>
+  <li>An external screen for our Raspberry (actually needed only when booting Ubuntu Core for the first time)</li>
+</ul>
+
+<p>In order to create an Ubuntu account, please refer to the <a href="https://login.ubuntu.com/">Ubuntu SSO account</a> page. Do not forget to add your SSH public key, as it’s needed for logging in to Ubuntu Core.</p>
+
+<h2 id="1-installing-ubuntu-core">1. Installing Ubuntu Core</h2>
+
+<p>Install Ubuntu Core by following the instructions on the Get Started page of Ubuntu Core: <a href="https://developer.ubuntu.com/core/get-started/raspberry-pi-2-3">https://developer.ubuntu.com/core/get-started/raspberry-pi-2-3</a></p>
+
+<p>Copy the image onto the micro-SD card, plug the card into the Raspberry PI and boot your Raspberry PI.</p>
+
+<p>Follow the on-screen setup wizard, type your Ubuntu SSO account email and you’re done.</p>
+
+<p>You can now simply ssh from your development machine to your Raspberry PI:</p>
+
+<pre class="lang:sh decode:true">ssh &lt;USERNAME&gt;@&lt;RASPBERRY-IP&gt;</pre>
+
+<h2 id="2-classic-mode">2. “classic” mode</h2>
+
+<p>Despite Ubuntu focus on Snap apps, we won’t be using Ubuntu this feature at the moment, as we need to enable the traditional development mode of our Ubuntu installation, now dubbed classic.</p>
+
+<p>To do so, run :</p>
+
+<pre class="lang:sh decode:true">$ sudo snap install classic --edge --devmode
+$ sudo classic</pre>
+
+<h2 id="3-update-apt-get">3. Update apt-get</h2>
+
+<p>Since the Ubuntu Core installation hasn’t received any repository update yet, it’s now the moment to fetch the packages:</p>
+
+<pre class="lang:sh decode:true ">$ sudo apt-get -qq update</pre>
+
+<h2 id="4-installing-swift">4. Installing Swift</h2>
+
+<p>There are two ways for get Swift running on your installation, the first one being compiling Swift from sources. This operation can take a long amount of time: that is, at least 10 hours on a Raspberry PI 3.</p>
+
+<p>Luckily, the team over at <a href="http://iachieved.it">iachieved.it</a> have been regularly compiling versions from source and distributing the artefacts via a Jenkins installation available at <a href="http://swift-arm.ddns.net">http://swift-arm.ddns.net</a>.</p>
+
+<p>This is a major simplification in our process, as we will be saving hours of compilation time and get straight to the installation part.</p>
+
+<p>At the time of writing, the most recent compiled version dates December, 21st 2016, as the machine used for compiling seems to have been offline for the past 30 or so days. The compiled Swift version is the 3.0.1-dev rather than the current 3.0.2 but that doesn’t affect in any way our setup.</p>
+
+<p>So, let’s install wget from apt-get, which will allows us to download the Swift artefact:</p>
+
+<pre class="lang:sh decode:true ">$ sudo apt-get install wget</pre>
+
+<p>Then, let’s proceed to Swift itself:</p>
+
+<pre class="lang:sh decode:true ">$ wget http://swift-arm.ddns.net/job/Swift-3.0-Pi3-ARM-Incremental/lastSuccessfulBuild/artifact/swift-3.0-2016-12-21-RPi23-ubuntu16.04.tar.gz</pre>
+
+<p>Now, time to unarchive the Swift package:</p>
+
+<pre class="lang:sh decode:true ">$ mkdir swift-3.0 &amp;&amp; cd swift-3.0
+$ tar -xvzf ../swift-3.0-2016-12-21-RPi23-ubuntu16.04.tar.gz</pre>
+
+<p>And, finally, add the folder we’ve extracted swift to to our PATH:</p>
+
+<pre class="lang:sh decode:true ">$ export PATH=$HOME/swift-3.0/usr/bin:$PATH</pre>
+
+<h2 id="5-dependencies">5. Dependencies</h2>
+
+<p>The installation is virtually over, but we need to install a number of dependencies needed by Swift at runtime.</p>
+
+<p>Let’s launch the following command – and take the time to drink a long coffee. Or two.</p>
+
+<pre class="lang:sh decode:true ">$ sudo apt-get install -y libpython2.7 libxml2 libicu-dev clang-3.6 libcurl3
+$ sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-3.6 100
+$ sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-3.6 100</pre>
+
+<h2 id="6-verifying-your-installation">6. Verifying your installation</h2>
+
+<p>Still there? Let’s verify that our installation is correct. Upon running the following command</p>
+
+<pre class="lang:sh decode:true ">$ swift --version</pre>
+
+<p>we should be greeted with the following line:</p>
+
+<pre class="lang:sh decode:true">Swift version 3.0.1-dev (LLVM a922364e5b, Clang 968470f170, Swift 0cca6668a2)
+</pre>
+
+<h2 id="7-our-first-project">7. Our first project</h2>
+
+<p>We’re finally taking the time to create and run a first empty project.</p>
+
+<pre class="lang:sh decode:true">$ cd $HOME
+$ mkdir proj &amp;&amp; cd proj
+$ swift package init --type executable
+$ swift build
+</pre>
+
+<p>And let’s finally run it:</p>
+
+<pre class="lang:sh decode:true ">$ .build/debug/proj</pre>
+
+<h2 id="acknowledgements">Acknowledgements</h2>
+
+<p>This article would not have been possible without the work of many developers from the iOS and Swift community, some of them being:</p>
+
+<ul>
+  <li>Joe (<a href="https://twitter.com/iachievedit">@iachievedit</a>) <a href="http://dev.iachieved.it">http://dev.iachieved.it</a></li>
+  <li>William Dillon (<a href="https://twitter.com/hpux735">@hpux735</a>) <a href="http://www.housedillon.com/">http://www.housedillon.com</a></li>
+  <li>Ryan Lovelett (<a href="https://twitter.com/rlovelett">@rlovelett) </a><a href="http://stackoverflow.com/users/247730/ryan">http://stackoverflow.com/users/247730/ryan</a></li>
+  <li>Brian Gesiak (<a href="https://twitter.com/modocache">@modocache</a>) <a href="http://modocache.io/">http://modocache.io</a></li>
+  <li><a href="https://github.com/karwa">Karl Wagner</a> <a href="http://www.springsup.com/">http://www.springsup.com/</a></li>
+  <li><a href="https://twitter.com/tienex">@tienex</a> <a href="https://github.com/tienex">tienex</a></li>
+  <li>PJ Gray (<a href="https://twitter.com/pj4533">@pj4533</a>) <a href="http://saygoodnight.com/">Say Goodnight Software</a></li>
+  <li>Cameron Perry (<a href="https://twitter.com/mistercameron">@mistercameron</a>) <a href="http://mistercameron.com/">http://mistercameron.com</a></li>
+</ul>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>That’s all for today! We now have our foundation block for controlling the GPIO of our Raspberry PI. That said, this setup is already sufficient for running Swift code and, even, a local Web Server through Web Frameworks like Kitura or Vapor. But let’s stick to our goal: next up, SwiftyGPIO.</p>
+
+
+      <hr>
+
+      
+      <div class="comments">
+        <div id="disqus_thread"></div>
+        <script>
+          var disqus_shortname = 'viteinfinite';
+          (function() {
+              var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+              dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+              (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </div>   
+                               
+
+      <div class="clearfix">
+
+        
+        <a class="btn btn-primary float-left" href="/viteinfinitecom/2015/07/leveraging-swift-code-coverage-with-xcode-7/" data-toggle="tooltip" data-placement="top" title="Leveraging Swift Code Coverage with Xcode 7">&larr; Previous<span class="d-none d-md-inline"> Post</span></a>
+        
+        
+        <a class="btn btn-primary float-right" href="/viteinfinitecom/2017/11/running-a-kotlinnative-ios-app-in-the-simulator/" data-toggle="tooltip" data-placement="top" title="Running a Kotlin/Native iOS app in the Simulator">Next<span class="d-none d-md-inline"> Post</span> &rarr;</a>
+        
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+    <!-- Footer -->
+
+<hr>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <ul class="list-inline text-center">
+          
+          <li class="list-inline-item">
+            <a href="https://www.twitter.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          
+          <li class="list-inline-item">
+            <a href="https://github.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="copyright text-muted">Copyright &copy; Simone Civetta 2018 | Powered by <a href="https://github.com/BlackrockDigital/startbootstrap-clean-blog-jekyll/blob/master/README.md">Clean Blog</a> on <a href="https://jekyllrb.com">Jekyll</a></p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <script src="/viteinfinitecom/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/startbootstrap-clean-blog/js/clean-blog.min.js"></script>
+
+<script src="/viteinfinitecom/assets/scripts.js"></script>
+
+
+
+
+  </body>
+
+</html>

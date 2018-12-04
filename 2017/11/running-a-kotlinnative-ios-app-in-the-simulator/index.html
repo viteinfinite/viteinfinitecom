@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    Running a Kotlin/Native iOS app in the Simulator - viteinfinite
+    
+  </title>
+
+  <meta name="description" content="Kotlin Native 0.4 is out since the beginning of November and, with it, some nice sample iOS demo apps to be run into your favourite iOS device. That sounds a...">
+
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/bootstrap/css/bootstrap.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/font-awesome/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/main.css">
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/rouge/syntax.css">
+  <link rel="canonical" href="http://viteinfinite.com/viteinfinitecom/2017/11/running-a-kotlinnative-ios-app-in-the-simulator/">
+  <link rel="alternate" type="application/rss+xml" title="viteinfinite" href="/viteinfinitecom/feed.xml">
+
+</head>
+
+
+  <body>
+
+    <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/viteinfinitecom/">viteinfinite</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fa fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/posts">Posts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/contact">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+    <!-- Page Header -->
+
+<header class="masthead">
+
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="post-heading">
+          <h1>Running a Kotlin/Native iOS app in the Simulator</h1>
+          
+
+          <span class="meta">
+                Posted on 
+              
+              November 25, 2017</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+
+      <p>Kotlin Native 0.4 is out since the beginning of November and, with it, some nice sample iOS demo apps to be run into your favourite iOS device. That sounds amazing, even for some hardcore Swift fans like me. Yet, there’s a catch: the sample apps can only run on a <em>real</em> iOS device but not in the Simulator. Sure, that’s just an unsignificant drawback compared to what the Kotlin Native team achieved so far. Still, I’m a huge fan of the iOS Simulator, as it’s by far the fastest way to do some quick testing of an app while doing a pretty good job in mimicking the behaviour of an app on a real device.</p>
+
+<!--more-->
+
+<hr />
+
+<p><strong>Update:</strong> since <a href="http://viteinfinite.com/2018/01/kotlinnative-0-5-and-ios/">Kotlin/Native 0.5</a>, the following article is now outdated. I’ll be keeping its content for reference.</p>
+
+<hr />
+
+<p>So, as a way to understand the Kotlin Native project, I decided to try supporting the Simulator on a Kotln Native iOS app.</p>
+
+<p>In order to do this, I started from the UIKit project sample found in the samples dir of the main repo and tried to make it run in the sim.</p>
+
+<p>The first element to be considered when building for the simulator is obviously that this platform runs on the x86_64 architecture, compared to the armv7s of a real device.</p>
+
+<p>To follow this tutorial, please clone the Kotlin/Native repo from <a href="https://github.com/JetBrains/kotlin-native">https://github.com/JetBrains/kotlin-native</a>. This repository contains all the sources to build <strong>konan</strong>, the kotlin compiler for native targets.</p>
+
+<h2 id="1-the-target">1. The Target</h2>
+
+<p>First thing I discovered when reading some of the KN source code, was that the iPhone Simulator support has been considered and partially implemented. Just, it was not active.</p>
+
+<p>In the KonanTarget.kt file, which manages which targets are actually available in the platforms, the line the <code class="highlighter-rouge">KonanTarget.IPHONE_SIM.enabled = true</code> was simply commented out. So, let’s uncomment it in order for Kotlin to start acknowledging the presence of an iOS Simulator target.</p>
+
+<p>A minor configuration issue had to be repaired as well. In particular, in the konan.proprerties file, the dependencies.osx-ios_sim at line 75 needs to be changed to:</p>
+
+<pre class="show-lang:2 nums:false lang:default highlight:0 decode:true ">dependencies.osx-ios_sim = target-sysroot-1-darwin-macos \
+libffi-3.2.1-2-darwin-ios-sim \
+clang-llvm-3.9.0-darwin-macos \
+target-sysroot-1-darwin-ios-sim</pre>
+
+<p>It’s now time to build the compiler, by following the (few) steps described in the README.md of the Kotlin/Native project.</p>
+
+<p>In particular, we’ll have to execute</p>
+
+<pre class="">./gradlew dist distPlatformLibs</pre>
+
+<h2 id="2-configuring-the-uikit-project">2. Configuring the uikit project</h2>
+
+<p>Next step, is to build the uikit project for the simulator. To do that, we simply have to change the <code class="highlighter-rouge">konan.targets = ['iphone']</code> in <em>samples/uikit/build.gradle</em> to read <code class="highlighter-rouge">konan.targets = ['iphone_sim']</code>.</p>
+
+<p>When I started building, without success, I hoped for some intelligible error message. And, in fact, there it was. Turns out, prior to building, konan downloads a number of dependencies needed for compiling to a specific target. Archives bundling the dependencies are pulled directly from downloads.jetbrains.com, saved to the <em>~/.konan/cache</em> directory and then extracted to the <em>~/.konan/dependencies</em> folder.</p>
+
+<p>In the case of the iOS Simulator, two of those are actually missing from the jetbrains repository: <em>libffi</em> and <em>target-sysroot</em>.</p>
+
+<h2 id="3-libffi">3. libffi</h2>
+
+<p>Libffi is an open-source project providing a Foreign Function Interface. As the libffi repo README says, Libffi is</p>
+
+<blockquote>
+  <p>a foreign function interface is the popular name for the interface that allows code written in one language to call code written in another language</p>
+</blockquote>
+
+<p>Kotlin Native uses libffi to call Objective-C platform frameworks, such as UIKit or Foundation.</p>
+
+<p>Unfortunately, while downloads.jetbrains.com provides a compiled libffi library supporting the iphoneos platform, there is no version available for iphonesimulator. So, time to build it from source. Luckily enough, the libffi repo already contains a pre-configured libffi.xcodeproj to build the library, so I just had to download it, generate Darwin headers files (using the generate-darwin-source-and-headers.py script) and producing a static library with Xcode.</p>
+
+<p>Feel lazy? <a href="http://viteinfinite.com/wp-content/uploads/2017/11/libffi-3.2.1-2-darwin-ios-sim.tar.gz">Here is a pre-compiled version</a>, built with Xcode 9.0.</p>
+
+<p>It’s now possible to build the library and archive it in a file <em>named libffi-3.2.1-2-darwin-ios-sim.tar.gz</em>. The archive has then to be inserted into the _~/.konan/cache _folder. This procedure is needed for konan to retrieve the libffi from the cache, instead of trying downloading the archive from the online repository.</p>
+
+<h2 id="4-target-sysroot">4. target-sysroot</h2>
+
+<p>The target-sysroot is, in this case, the SDK we’re targeting, in other words the iphonesimulator. You can get a list of the sdks installed with Xcode by running</p>
+
+<pre class="">xcrun --sdk iphoneos11.1 --show-sdk-path</pre>
+
+<p>in the terminal.</p>
+
+<p>Since we’re looking for the iOS simulator SDK, we’ll be typing again in the terminal</p>
+
+<pre class="">xcrun --sdk iphonesimulator11.1 --show-sdk-path</pre>
+
+<p>to retrieve the SDK path.</p>
+
+<p>Normally, the SDK is ready to be used for our app to be built against. Instead, some minor modifications should be added for the compilation to succeed. In particular, I needed to tweak the NSUUID.h header in _<SDK>/System/Library/Frameworks/Foundation.framework/Headers_ to remove the nullability keywords (`_Nonnull` and `_Nullable`) in the interface methods `initWithUUIDBytes:` and `getUUIDBytes:`.</SDK></p>
+
+<p>Of course, the whole folder had to be <em>tarred</em> to a target-sysroot-1-darwin-ios-sim.tar.gz file and then moved into <em>~/.konan/cache</em>.</p>
+
+<p>Once again, this procedure is needed for konan to avoid downloading the archive from the online repository.</p>
+
+<h2 id="5-runtime">5. Runtime</h2>
+
+<p>Once libffi is build, the target sysroot is retrieved and both are achieved and inserted in the cache folder, it was time to compile the kotlin runtime for the iphonesimulator.</p>
+
+<p>The runtime will be linked to iOS app during the build process, and this will ultimately allow our kotlin code to access the functions provided by the iOS native frameworks.</p>
+
+<p>In order to build the runtime for the Simulator, we simply have to cd to our kotlin-native source folder and run</p>
+
+<pre class="">./gradlew iphone_simCrossDistRuntime</pre>
+
+<p>Building the runtime may take up to 10/15 minutes, so get grab a coffee and please come back more excited than ever.</p>
+
+<h2 id="6-project-build-configuration">6. Project build configuration</h2>
+
+<p>Alright, all the prerequisites are in place!</p>
+
+<p>Before running, back to Xcode, let’s change the “Replace Binary” phase to read</p>
+
+<p><code class="highlighter-rouge">cp "$SRCROOT/build/konan/bin/iphone_sim/app.kexe" "$TARGET_BUILD_DIR/$EXECUTABLE_PATH"</code></p>
+
+<p>And, that’s it. Just build the app as you would normally do and run it in an iOS simulator.</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>To be honest, I’m pretty excited by the result and I can’t wait to do some more with kotlin for iOS.</p>
+
+<p>As for the technicalities of the articles, even if my initial goal involved some degree of knowledge on subjects I barely know about, turns out that there was not much work to be done after all: in fact, the Kotlin Native team did all the heavy lifting, as the simulator support was almost finished apart from some missing bits.</p>
+
+<p>Most of all, that was, to some extent, a rewarding task and a good opportunity to submit a PR to the team.</p>
+
+
+      <hr>
+
+      
+      <div class="comments">
+        <div id="disqus_thread"></div>
+        <script>
+          var disqus_shortname = 'viteinfinite';
+          (function() {
+              var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+              dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+              (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </div>   
+                               
+
+      <div class="clearfix">
+
+        
+        <a class="btn btn-primary float-left" href="/viteinfinitecom/2017/02/swift-on-the-raspberry-pi-part-1/" data-toggle="tooltip" data-placement="top" title="Swift on the Raspberry PI">&larr; Previous<span class="d-none d-md-inline"> Post</span></a>
+        
+        
+        <a class="btn btn-primary float-right" href="/viteinfinitecom/2018/01/kotlinnative-0-5-and-ios/" data-toggle="tooltip" data-placement="top" title="Kotlin/Native 0.5 and iOS">Next<span class="d-none d-md-inline"> Post</span> &rarr;</a>
+        
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+    <!-- Footer -->
+
+<hr>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <ul class="list-inline text-center">
+          
+          <li class="list-inline-item">
+            <a href="https://www.twitter.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          
+          <li class="list-inline-item">
+            <a href="https://github.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="copyright text-muted">Copyright &copy; Simone Civetta 2018 | Powered by <a href="https://github.com/BlackrockDigital/startbootstrap-clean-blog-jekyll/blob/master/README.md">Clean Blog</a> on <a href="https://jekyllrb.com">Jekyll</a></p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <script src="/viteinfinitecom/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/startbootstrap-clean-blog/js/clean-blog.min.js"></script>
+
+<script src="/viteinfinitecom/assets/scripts.js"></script>
+
+
+
+
+  </body>
+
+</html>

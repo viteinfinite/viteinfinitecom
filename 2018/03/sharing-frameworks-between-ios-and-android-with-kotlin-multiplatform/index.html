@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    Sharing frameworks between iOS and Android with Kotlin Multiplatform - viteinfinite
+    
+  </title>
+
+  <meta name="description" content="Today we’ll see how to use Kotlin code to write a cross platform module that can be shared between an iOS and an Android app. Since the support for building ...">
+
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/bootstrap/css/bootstrap.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/font-awesome/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/main.css">
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/rouge/syntax.css">
+  <link rel="canonical" href="http://viteinfinite.com/viteinfinitecom/2018/03/sharing-frameworks-between-ios-and-android-with-kotlin-multiplatform/">
+  <link rel="alternate" type="application/rss+xml" title="viteinfinite" href="/viteinfinitecom/feed.xml">
+
+</head>
+
+
+  <body>
+
+    <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/viteinfinitecom/">viteinfinite</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fa fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/posts">Posts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/contact">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+    <!-- Page Header -->
+
+<header class="masthead">
+
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="post-heading">
+          <h1>Sharing frameworks between iOS and Android with Kotlin Multiplatform</h1>
+          
+
+          <span class="meta">
+                Posted on 
+              
+              March 01, 2018</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+
+      <p>Today we’ll see how to use Kotlin code to write a cross platform module that can be shared between an iOS and an Android app.</p>
+
+<p>Since the support for building iOS frameworks, introduced with <a href="https://blog.jetbrains.com/kotlin/2017/12/kotlinnative-v0-5-released-calling-kotlin-from-swift-and-c-llvm-5-and-more/">Kotlin/Native 0.5</a> in December 2017, it has been possible to use the same code for creating libraries for both Android (.aar) and iOS (.framework). A couple of months later, <a href="https://blog.jetbrains.com/kotlin/2018/02/kotlinnative-v0-6-is-here/">Kotlin/Native 0.6</a> officially supports this use case, thanks to the support of <a href="https://kotlinlang.org/docs/reference/multiplatform.html">Multiplatform</a>, a new functionality focused on sharing code across platforms, introduced in the <a href="https://blog.jetbrains.com/kotlin/2017/11/kotlin-1-2-released/">version 1.2 of the Kotlin language</a>.</p>
+
+<!--more-->
+
+<hr />
+
+<blockquote>
+  <p>🇫🇷 <em>Parlez-vous Français</em> ? You can read a <a href="https://blog.xebia.fr/2018/03/13/creer-des-modules-partages-entre-android-et-ios-avec-kotlin-multiplatform/">French Version of this post</a> on our blog at <a href="http://blog.xebia.fr">Xebia France</a>.</p>
+</blockquote>
+
+<hr />
+
+<p>Today’s goal will be to create two modules, one for iOS and another one for Android, sharing a common interface but providing slightly different implementations, both written in Kotlin.</p>
+
+<p>Multiplatform supports a DSL bringing two new kinds of modules:</p>
+
+<ul>
+  <li>“Common”: they contain code that is not specific to any platform, and unimplemented (“apxpect”) placeholder declarations that need to rely on a platform-specific implementation</li>
+  <li>“Platform”: they contain platform-specific code that implement the placeholder declarations in the common module. Platform modules can also contain other platform-dependent code.</li>
+  <li>“Regular”: they regroup those modules which are neither “Common” nor “Platform”.</li>
+</ul>
+
+<p>A good example for this need is File I/O: as expected, any implementation of file access or networking is beyond the scope of Kotlin Standard Library. So, in case our commons module wants to use the file system, it’ll have to rely on two different underlying implementations which are platform dependent. For instance, to access files on Android, we would be using the <code class="highlighter-rouge">Java.io.File</code> while on iOS we would rather use <code class="highlighter-rouge">NSFileManager</code>.</p>
+
+<p>So, let’s begin where we left in our previous post about <a href="http://viteinfinite.com/2018/02/creating-an-ios-framework-with-kotlin/">the creation of iOS frameworks with Kotlin/Native</a>.</p>
+
+<p>Our module didn’t do anything except returning a string value. So, we’ll modify this behaviour by making our function return a different value depending on the system our module runs on. Our two implementations will be packaged under two different forms: an Android Archive (.aar) for Android and a Framework for iOS.</p>
+
+<p>In order to do this we have to slightly change our project structure by adding two new folders corresponding to the <em>Platform</em> modules (<em>myframework-ios</em> and <em>myframework-android</em>), and create a directory tree containing “src/main/kotlin/fr/xebia/myframework” in both of them.</p>
+
+<p>The resulting file tree should now be as follows:</p>
+
+<pre class="lang:default decode:true ">├── build.gradle
+├── gradle
+├── gradlew
+├── gradlew.bat
+├── myframework
+│   ├── build.gradle
+│   └── src
+│       └── main
+│           └── kotlin
+│               └── fr
+│                   └── xebia
+│                       └── myframework
+│                           └── foo.kt
+├── myframework-android
+│   └── src
+│       └── main
+│           └── kotlin
+│               └── fr
+│                   └── xebia
+│                       └── myframework
+├── myframework-ios
+│   └── src
+│       └── main
+│           └── kotlin
+│               └── fr
+│                   └── xebia
+│                       └── myframework
+└── settings.gradle</pre>
+
+<p> </p>
+
+<h2 id="the-common-project">The common project</h2>
+
+<h3 id="settingsgradle">Settings.gradle</h3>
+
+<p>Now, we have to make sure Gradle recognises myrframework-android as part of our project. To do this, we need to edit our settings.gradle file and, in the second line, add <code class="highlighter-rouge">:myframework-android</code> and <code class="highlighter-rouge">:myframework-ios</code>.</p>
+
+<p>The complete file contents are:</p>
+
+<pre class="lang:default decode:true ">rootProject.name = 'MyProject'
+include ':myframework', ‘:myframework-android', ‘:myframework-ios'
+</pre>
+
+<p>We can now run</p>
+
+<pre class="lang:default decode:true ">./gradlew tasks</pre>
+
+<p>to double check your new configuration does not output any error.</p>
+
+<h3 id="buildgradle">build.gradle</h3>
+
+<p>Time to modify our build tasks: in our main build.gradle, we’ll have to change the kotlin version to <em>1.2.30</em>. This is needed in order to use the Multiplatform feature on Android.</p>
+
+<p>The new, complete build.gradle is as follows:</p>
+
+<pre class="lang:default decode:true">allprojects {
+    buildscript {
+        ext.kotlin_version = '1.2.30'
+        ext.konan_version = '0.6.1'
+
+        repositories {
+            jcenter()
+        }
+    }
+}</pre>
+
+<h3 id="back-to-the-code">Back to the code</h3>
+
+<p>Let’s get back to our Foo class. We’d like to provide an extremely basic implementation, in which the <code class="highlighter-rouge">bar()</code> function will return a different string, depending on the OS. On Android, the returned string will be <code class="highlighter-rouge">"bar-android"</code>, while, on iOS, <code class="highlighter-rouge">"bar-ios"</code>.</p>
+
+<p>Now, it’s the time to introduce a new keyword: expect. By the means of this we can tell the compiler that this declaration is nothing more than a placeholder – but that we’ll be <strong>expect</strong>ing a concrete, <strong>actual</strong>, implementation from one of our platform-dependent projects.</p>
+
+<p>So, we’ll modify the Foo.kt file inside the <em>myframework</em> subproject as follows:</p>
+
+<pre class="lang:default decode:true ">package fr.xebia.myframework
+
+expect class Foo() {
+    fun bar(): String
+}</pre>
+
+<p> </p>
+
+<p>Also, we need to declare that this project supports Multiplatform: in order to do this, we’ll have to modify the <em>build.gradle</em> at <em>myframework/build.gradle</em> as follows:</p>
+
+<pre class="lang:default decode:true">buildscript {
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+apply plugin: 'org.jetbrains.kotlin.platform.common'
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version"
+}
+
+repositories {
+    jcenter()
+}</pre>
+
+<h2 id="the-actual-implementation">The <em>actual</em> implementation</h2>
+
+<p>So, it’s now time to get to the platform-specific implementations, starting with Android.</p>
+
+<p>We’ll now add a new build.gradle just inside the  myframework-android, holding the configuration for this subproject.</p>
+
+<h3 id="buildgradle-android">build.gradle (Android)</h3>
+
+<p>In the new build gradle we’re going to declare that myframework-android provides an implementation that is expected by another project, namely <em>myframework</em>. We do this by using the <code class="highlighter-rouge">expectedBy</code> scope.</p>
+
+<p>Also, and foremost, let’s not forget we’re building an Android library here, so we’ll have to add all the settings required by such context, under the ‘android’ property.</p>
+
+<p>Here’s how the build.gradle file looks like for the <em>myframework-android</em> subproject:</p>
+
+<pre class="lang:default decode:true">buildscript {
+    repositories {
+        google()
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.android.tools.build:gradle:3.0.1'
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-platform-android'
+
+android {
+    compileSdkVersion 26
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 26
+        versionCode 1
+        versionName '1.0'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    expectedBy project(':myframework')
+}
+</pre>
+
+<h3 id="androidmanifest">AndroidManifest</h3>
+
+<p>Since we’re building an .aar, we also need for an <em>AndroidManifest.xml</em>, which is required by the targets.</p>
+
+<p>In this project, we’ll add, inside the <em>myframework-android/src/main</em> folder, <a href="https://github.com/xebia-france/kotlin-ios-framework/blob/feature/multiplatform/myframework-android/src/main/AndroidManifest.xml">a simple manifest file</a>.</p>
+
+<h3 id="code">Code</h3>
+
+<p>It is the time to provide the platform-specific implementation. In this extremely basic implementation, the <code class="highlighter-rouge">bar()</code> function will return a different string, depending on the OS. On Android, the returned string will be <code class="highlighter-rouge">"bar-android"</code>.</p>
+
+<p>In order to do this, we have to make sure our “actual” implementation:</p>
+
+<ul>
+  <li>Belongs to the same package as the base (or “expect”) implementation</li>
+  <li>Uses the keywords “actual”, both before class (and optionally before its constructor) and before the actual function implementation.</li>
+</ul>
+
+<p>The result is as follows:</p>
+
+<p> </p>
+
+<pre class="lang:default decode:true ">package fr.xebia.myframework
+
+actual class Foo {
+    actual fun bar() = "bar-android"
+}</pre>
+
+<h2 id="ios">iOS</h2>
+
+<p>Creating the iOS counterpart doesn’t differ much from what we learned in <a href="http://viteinfinite.com/2018/02/creating-an-ios-framework-with-kotlin/">our previous article</a>.</p>
+
+<p>First of all, we have to add a new build.gradle file containing the konan (i.e., the Kotlin/Native compiler) definitions. As mentioned, the build.gradle file should look quite familiar now, with the exception of the <code class="highlighter-rouge">enableMultiplatform true</code> directive, enabling the Multiplatform support in this subproject.</p>
+
+<p>As we did in the Android counterpart, the <code class="highlighter-rouge">expectedBy</code> directive under <code class="highlighter-rouge">dependencies</code> tells gradle that our project contains the “actual” implementation of <em>myframework</em>.</p>
+
+<pre class="lang:default decode:true">apply plugin: 'konan'
+
+buildscript {
+    repositories {
+        maven {
+            url ‘https://dl.bintray.com/jetbrains/kotlin-native-dependencies'
+        }
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-native-gradle-plugin:$konan_version"
+    }
+}
+
+konanArtifacts {
+    framework('KotlinMyFramework', targets: ['iphone', 'iphone_sim']) {
+        srcDir 'src/main/kotlin'
+
+        enableMultiplatform true
+    }
+}
+
+dependencies {
+    expectedBy project(':myframework')
+}</pre>
+
+<p> </p>
+
+<h3 id="code-1">Code</h3>
+
+<p>The code is once again a matter of few lines. We’ll be adding a <em>Foo.kt</em> class inside <em>myframework-ios/src/main/kotlin/fr/xebia/myframework</em></p>
+
+<p>In this case, the “actual” implementation of the <code class="highlighter-rouge">Foo</code> class will return the string <code class="highlighter-rouge">bar-ios</code>. Once again, in order for the class to match the “expected” one, we must remember to declare the <code class="highlighter-rouge">package</code> this file lives in.</p>
+
+<p>And here is the full implementation:</p>
+
+<p> </p>
+
+<pre class="lang:default decode:true ">package fr.xebia.myframework
+
+actual class Foo {
+    actual fun bar() = "bar-ios"
+}</pre>
+
+<h2 id="building">Building</h2>
+
+<p>And that’s all. By running</p>
+
+<pre class="lang:default decode:true ">./gradlew tasks</pre>
+
+<p>we should now be able to get all the iOS (e.g. <code class="highlighter-rouge">konanCompile</code>) and Android tasks.</p>
+
+<p>We can build both iOS and Android at the same time by running, from our project folder.</p>
+
+<pre class="lang:default decode:true ">./gradlew build</pre>
+
+<p>The artefacts will be created in the <em>myframework-ios/build</em> and <em>myframework-android/build</em> folders.</p>
+
+<p>You can get a complete example of the code above from <a href="https://github.com/xebia-france/kotlin-ios-framework/tree/feature/multiplatform">the feature/multiplatform branch of this repo</a>.</p>
+
+<h2 id="wrapping-up">Wrapping Up</h2>
+
+<p>As we’ve seen, the workflow introduced by Kotlin multiplatform is pretty straightforward and has been quickly implemented in Kotlin/Native. I can say I am quite surprised to see so many features getting implemented into Kotlin and Kotlin/Native and I’m really looking forward to seeing the reception of mobile developers in respect to such tools.</p>
+
+<h2 id="credits">Credits</h2>
+
+<p>Once again, I particularly wish to thank my fellow colleagues at <a href="http://blog.xebia.fr">Xebia</a>, Bastien Bonnet, Sergio Dos Santos and Benjamin Lacroix, for thoroughly reviewing this article.</p>
+
+
+      <hr>
+
+      
+      <div class="comments">
+        <div id="disqus_thread"></div>
+        <script>
+          var disqus_shortname = 'viteinfinite';
+          (function() {
+              var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+              dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+              (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </div>   
+                               
+
+      <div class="clearfix">
+
+        
+        <a class="btn btn-primary float-left" href="/viteinfinitecom/2018/02/creating-an-ios-framework-with-kotlin/" data-toggle="tooltip" data-placement="top" title="Creating an iOS framework with… Kotlin">&larr; Previous<span class="d-none d-md-inline"> Post</span></a>
+        
+        
+        <a class="btn btn-primary float-right" href="/viteinfinitecom/2018/04/kotlin-multiplatform-testing-ios-android/" data-toggle="tooltip" data-placement="top" title="Kotlin Multiplatform: testing a shared module supporting iOS and Android">Next<span class="d-none d-md-inline"> Post</span> &rarr;</a>
+        
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+    <!-- Footer -->
+
+<hr>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <ul class="list-inline text-center">
+          
+          <li class="list-inline-item">
+            <a href="https://www.twitter.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          
+          <li class="list-inline-item">
+            <a href="https://github.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="copyright text-muted">Copyright &copy; Simone Civetta 2018 | Powered by <a href="https://github.com/BlackrockDigital/startbootstrap-clean-blog-jekyll/blob/master/README.md">Clean Blog</a> on <a href="https://jekyllrb.com">Jekyll</a></p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <script src="/viteinfinitecom/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/startbootstrap-clean-blog/js/clean-blog.min.js"></script>
+
+<script src="/viteinfinitecom/assets/scripts.js"></script>
+
+
+
+
+  </body>
+
+</html>

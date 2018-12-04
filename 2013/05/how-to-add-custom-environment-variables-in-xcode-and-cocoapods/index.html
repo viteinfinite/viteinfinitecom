@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html>
+
+  <head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <title>
+    How to add custom environment variables in Xcode and CocoaPods - viteinfinite
+    
+  </title>
+
+  <meta name="description" content="Let’s say we would like to share some Xcode environment variables across multiple targets in a project configured with CocoaPods. For instance, we would to u...">
+
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/bootstrap/css/bootstrap.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/font-awesome/css/font-awesome.min.css">
+
+  <link rel="stylesheet" href="/viteinfinitecom/assets/main.css">
+  <link rel="stylesheet" href="/viteinfinitecom/assets/vendor/rouge/syntax.css">
+  <link rel="canonical" href="http://viteinfinite.com/viteinfinitecom/2013/05/how-to-add-custom-environment-variables-in-xcode-and-cocoapods/">
+  <link rel="alternate" type="application/rss+xml" title="viteinfinite" href="/viteinfinitecom/feed.xml">
+
+</head>
+
+
+  <body>
+
+    <!-- Navigation -->
+<nav class="navbar navbar-expand-lg navbar-light fixed-top" id="mainNav">
+  <div class="container">
+    <a class="navbar-brand" href="/viteinfinitecom/">viteinfinite</a>
+    <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+      Menu
+      <i class="fa fa-bars"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarResponsive">
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/">Home</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/about">About</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/posts">Posts</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/viteinfinitecom/contact">Contact</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+
+    <!-- Page Header -->
+
+<header class="masthead">
+
+  <div class="overlay"></div>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <div class="post-heading">
+          <h1>How to add custom environment variables in Xcode and CocoaPods</h1>
+          
+
+          <span class="meta">
+                Posted on 
+              
+              May 21, 2013</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-8 col-md-10 mx-auto">
+
+      <p>Let’s say we would like to share some Xcode environment variables across multiple targets in a project configured with CocoaPods. For instance, we would to use the same app version number across our development and distribution targets in order not to retype the same values for each version bump over and over again.</p>
+
+<!--more-->
+
+<p>The solution I opted for was to:</p>
+
+<ol>
+  <li>Add a custom xcconfig file (for instance “SharedSettings.xcconfig”) from the Xcode menu</li>
+</ol>
+
+<p style="text-align: center;">
+  <a href="http://www.viteinfinite.com/wp-content/uploads/2013/05/Screen-Shot-2013-05-21-at-12.16.11-PM.png"><img class="alignnone size-medium wp-image-174576627" alt="Screen Shot 2013-05-21 at 12.16.11 PM" src="http://www.viteinfinite.com/wp-content/uploads/2013/05/Screen-Shot-2013-05-21-at-12.16.11-PM-300x204.png" width="300" height="204" srcset="http://viteinfinite.com/wp-content/uploads/2013/05/Screen-Shot-2013-05-21-at-12.16.11-PM-300x204.png 300w, http://viteinfinite.com/wp-content/uploads/2013/05/Screen-Shot-2013-05-21-at-12.16.11-PM-624x424.png 624w, http://viteinfinite.com/wp-content/uploads/2013/05/Screen-Shot-2013-05-21-at-12.16.11-PM.png 742w" sizes="(max-width: 300px) 100vw, 300px" /></a>
+</p>
+
+<p style="text-align: left;">
+  2. In the project settings, change the configuration settings file to “SharedSettings”
+</p>
+
+<p style="text-align: left;">
+  <a href="http://www.viteinfinite.com/wp-content/uploads/2013/05/Screen-Shot-2013-05-21-at-12.18.43-PM.png"><img class="size-medium wp-image-174576628 aligncenter" alt="Screen Shot 2013-05-21 at 12.18.43 PM" src="http://www.viteinfinite.com/wp-content/uploads/2013/05/Screen-Shot-2013-05-21-at-12.18.43-PM-300x163.png" width="300" height="163" srcset="http://viteinfinite.com/wp-content/uploads/2013/05/Screen-Shot-2013-05-21-at-12.18.43-PM-300x163.png 300w, http://viteinfinite.com/wp-content/uploads/2013/05/Screen-Shot-2013-05-21-at-12.18.43-PM-624x339.png 624w, http://viteinfinite.com/wp-content/uploads/2013/05/Screen-Shot-2013-05-21-at-12.18.43-PM.png 882w" sizes="(max-width: 300px) 100vw, 300px" /></a>
+</p>
+
+<p style="text-align: left;">
+  3. In settings file, in order to preserve your pod configuration, add
+</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#include "Pods/Pods.xcconfig"
+VERSION_NUMBER = 3.0
+</code></pre></div></div>
+
+<p>And it’s done: now you can use the environment variable <code class="highlighter-rouge">$(VERSION_NUMBER)</code>, even in your plist file, without breaking the compatibility with CocoaPods. As a result, any future “pod install” will not break the configuration you have just created.</p>
+
+
+      <hr>
+
+      
+      <div class="comments">
+        <div id="disqus_thread"></div>
+        <script>
+          var disqus_shortname = 'viteinfinite';
+          (function() {
+              var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+              dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+              (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+          })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </div>   
+                               
+
+      <div class="clearfix">
+
+        
+        <a class="btn btn-primary float-left" href="/viteinfinitecom/2013/05/how-to-resolve-unable-to-start-status-bar-server-failed-to-check-into-com-apple-uikit-statusbarserver-unknown-error-code-exception/" data-toggle="tooltip" data-placement="top" title="How to resolve “Unable to start status bar server. Failed to check into com.apple.UIKit.statusbarserver: unknown error code” exception">&larr; Previous<span class="d-none d-md-inline"> Post</span></a>
+        
+        
+        <a class="btn btn-primary float-right" href="/viteinfinitecom/2013/05/about-the-builder-pattern-in-objective-c/" data-toggle="tooltip" data-placement="top" title="About the Builder Pattern in Objective&#8209;C">Next<span class="d-none d-md-inline"> Post</span> &rarr;</a>
+        
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+    <!-- Footer -->
+
+<hr>
+
+<footer>
+  <div class="container">
+    <div class="row">
+      <div class="col-lg-8 col-md-10 mx-auto">
+        <ul class="list-inline text-center">
+          
+          <li class="list-inline-item">
+            <a href="https://www.twitter.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-twitter fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+          
+          
+          <li class="list-inline-item">
+            <a href="https://github.com/viteinfinite">
+              <span class="fa-stack fa-lg">
+                <i class="fa fa-circle fa-stack-2x"></i>
+                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
+              </span>
+            </a>
+          </li>
+          
+        </ul>
+        <p class="copyright text-muted">Copyright &copy; Simone Civetta 2018 | Powered by <a href="https://github.com/BlackrockDigital/startbootstrap-clean-blog-jekyll/blob/master/README.md">Clean Blog</a> on <a href="https://jekyllrb.com">Jekyll</a></p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+    <script src="/viteinfinitecom/assets/vendor/jquery/jquery.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="/viteinfinitecom/assets/vendor/startbootstrap-clean-blog/js/clean-blog.min.js"></script>
+
+<script src="/viteinfinitecom/assets/scripts.js"></script>
+
+
+
+
+  </body>
+
+</html>

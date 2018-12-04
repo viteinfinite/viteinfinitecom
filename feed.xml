@@ -1,0 +1,1054 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.4">Jekyll</generator><link href="http://viteinfinite.com/viteinfinitecom/feed.xml" rel="self" type="application/atom+xml" /><link href="http://viteinfinite.com/viteinfinitecom/" rel="alternate" type="text/html" /><updated>2018-12-04T18:55:39+00:00</updated><id>http://viteinfinite.com/viteinfinitecom/feed.xml</id><title type="html">viteinfinite</title><subtitle>Minuscoli frammenti</subtitle><author><name>Simone Civetta</name></author><entry><title type="html">Kotlin Multiplatform: testing a shared module supporting iOS and Android</title><link href="http://viteinfinite.com/viteinfinitecom/2018/04/kotlin-multiplatform-testing-ios-android/" rel="alternate" type="text/html" title="Kotlin Multiplatform: testing a shared module supporting iOS and Android" /><published>2018-04-15T09:51:43+00:00</published><updated>2018-04-15T09:51:43+00:00</updated><id>http://viteinfinite.com/viteinfinitecom/2018/04/kotlin-multiplatform-testing-ios-android</id><content type="html" xml:base="http://viteinfinite.com/viteinfinitecom/2018/04/kotlin-multiplatform-testing-ios-android/">&lt;p&gt;Conceiving your app as modular can be greatly beneficial to your codebase’s health. In particular, designing a separation between your view and business logic can decrease the coupling between your layers and improve maintainability as well as testability. Tests are indeed your app’s best friends, as they can, at the same time, verify the code you wrote works as intended and act as a specification for the implemented functionality.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;hr /&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;🇫🇷 &lt;em&gt;Parlez-vous Français&lt;/em&gt; ? You can read a &lt;a href=&quot;https://blog.xebia.fr/2018/04/11/tester-un-projet-kotlin-multiplatform/&quot;&gt;French Version of this post&lt;/a&gt; on our blog at &lt;a href=&quot;http://blog.xebia.fr&quot;&gt;Xebia France&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;When it comes to Multiplatform, Kotlin provides an interesting solution for testing your logic: in this configuration, every written test is executed against each one of your targeted platform.&lt;/p&gt;
+
+&lt;p&gt;In other words, given you target are Android and iOS (via &lt;a href=&quot;https://kotlinlang.org/docs/reference/native-overview.html&quot;&gt;Kotlin/Native&lt;/a&gt;), your tests will be compiled and launched in both the JVM and the native runtime.&lt;/p&gt;
+
+&lt;p&gt;The setup of unit tests for Multiplatform can be tricky, though. Let’s see how to get a working configuration.&lt;/p&gt;
+
+&lt;p&gt;In order to do this, we’ll proceed from &lt;a href=&quot;http://viteinfinite.com/2018/03/sharing-frameworks-between-ios-and-android-with-kotlin-multiplatform/&quot;&gt;where we left in our last post&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;As you might recall, our module did nothing more than producing two strings, &lt;code class=&quot;highlighter-rouge&quot;&gt;bar-android&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;bar-ios&lt;/code&gt; for Android and iOS respectively. Thanks to test in Kotlin Multiplatform we’ll be able to verify that, no matter the targeted platform, the produced value starts with &lt;code class=&quot;highlighter-rouge&quot;&gt;bar-&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;writing-our-test&quot;&gt;Writing our Test&lt;/h2&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The full code for this article is available in the &lt;a href=&quot;https://github.com/xebia-france/kotlin-ios-framework/tree/feature/multiplatform&quot;&gt;feature/multiplatform branch of our kotlin-ios-framework repository&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;So, time to create a new file. First of all, let’s create a folder holding our test: &lt;em&gt;myframework/src/test/kotlin/fr/xebia/myframework/&lt;/em&gt;. As you would expect, the path mirrors the one containing our implementation under test. In this directory we’ll create a new test class, &lt;code class=&quot;highlighter-rouge&quot;&gt;TestFoo&lt;/code&gt;, whose contents are as follows:&lt;/p&gt;
+
+&lt;div class=&quot;language-kotlin highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;package&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;fr.xebia.myframework&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;kotlin.test.*&lt;/span&gt;
+
+&lt;span class=&quot;kd&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;TestFoo&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+
+    &lt;span class=&quot;c1&quot;&gt;// The “@Test” annotation allows Kotlin to recognise the following function as a test
+&lt;/span&gt;    &lt;span class=&quot;n&quot;&gt;@Test&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;testBar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;kd&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;py&quot;&gt;foo&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Foo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+
+        &lt;span class=&quot;c1&quot;&gt;// The assert to be verified
+&lt;/span&gt;        &lt;span class=&quot;n&quot;&gt;assertTrue&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;foo&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;().&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;startsWith&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;bar-&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;As you can see, Kotlin comes with a testing and assertion framework, so no need to declare another dependency to your project.&lt;/p&gt;
+
+&lt;p&gt;Of course, for tests to be run, we need to edit our &lt;code class=&quot;highlighter-rouge&quot;&gt;build.gradle&lt;/code&gt; files. Let’s start with the common project’s: it should declare two additional &lt;em&gt;dependencies&lt;/em&gt;: &lt;code class=&quot;highlighter-rouge&quot;&gt;kotlin-test-common&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;kotlin-test-annotations&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Please note that, in Kotlin Multiplatform, since tests can be only run against a specific target platform (such as Android’s JVM), &lt;code class=&quot;highlighter-rouge&quot;&gt;kotlin-test-common&lt;/code&gt; will not suffice to be running your verification logic, but acts as a placeholder for an actual testing framework such as JUnit.&lt;/p&gt;
+
+&lt;p&gt;As a proof, we can already try compiling the tests, which action will produce a build error, as the platform target won’t know how to interpret annotations and assertions.&lt;/p&gt;
+
+&lt;h2 id=&quot;buildgradle-for-android&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;build.gradle&lt;/code&gt; for Android&lt;/h2&gt;
+
+&lt;p&gt;Quite unsurprisingly, we’ll have to edit the build.gradle file for the Android project as well. Similarly to the build file included in the common project, the Android’s should declare additional dependencies, needed for testing: JUnit, &lt;code class=&quot;highlighter-rouge&quot;&gt;kotlin-test-junit&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;kotlin-test&lt;/code&gt;. Those dependencies contain the actual frameworks that will be executing during the execution of your tests.&lt;/p&gt;
+
+&lt;h2 id=&quot;buildgradle-for-kotlinnative&quot;&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;build.gradle&lt;/code&gt; for Kotlin/Native&lt;/h2&gt;
+
+&lt;p&gt;Last but not least, let’s configure the gradle file for the Kotlin/Native project used on iOS, which setup is definitely trickier.&lt;/p&gt;
+
+&lt;p&gt;In the current version of Kotlin/Native, in order for tests to be launched, we’ll have to create a “dummy” program that will hold both our “main” and “test” code and that will be executed when running the “test” task with gradle.&lt;/p&gt;
+
+&lt;p&gt;To do so, let’s then add a new program in the build.gradle file contained in our myframework-ios folder:&lt;/p&gt;
+
+&lt;div class=&quot;language-groovy highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;program&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'shared-ios-test'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;srcDir&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'src/main/kotlin'&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;srcDir&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'src/test/kotlin'&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;commonSourceSets&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'main'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'test'&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;extraOpts&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'-tr'&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;enableMultiplatform&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;true&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Second, we need to ask gradle to run the program upon launch of the “test” task. To do so we’ll have to add a new task, at the bottom of the file:&lt;/p&gt;
+
+&lt;div class=&quot;language-groovy highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;n&quot;&gt;task&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;test&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nl&quot;&gt;dependsOn:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;run&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;When running &lt;code class=&quot;highlighter-rouge&quot;&gt;gradle test&lt;/code&gt;, our program will compile, get executed and produce the following output:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;[==========]&lt;/span&gt; Running 1 tests from 1 &lt;span class=&quot;nb&quot;&gt;test &lt;/span&gt;cases.
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;----------&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; Global &lt;span class=&quot;nb&quot;&gt;test &lt;/span&gt;environment set-up.
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;----------&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; 1 tests from fr.xebia.myframework.TestFoo
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt; RUN      &lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; fr.xebia.myframework.TestFoo.testBar
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;       OK &lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; fr.xebia.myframework.TestFoo.testBar &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;0 ms&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;----------&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; 1 tests from fr.xebia.myframework.TestFoo &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;0 ms total&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;----------&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; Global &lt;span class=&quot;nb&quot;&gt;test &lt;/span&gt;environment tear-down
+&lt;span class=&quot;o&quot;&gt;[==========]&lt;/span&gt; 1 tests from 1 &lt;span class=&quot;nb&quot;&gt;test &lt;/span&gt;cases ran. &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;0 ms total&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;  PASSED  &lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; 1 tests.
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Once again, you can grab the full code for this article from &lt;a href=&quot;https://github.com/xebia-france/kotlin-ios-framework/tree/feature/multiplatform&quot;&gt;the feature/multiplatform branch of our kotlin-ios-framework repository&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;going-further&quot;&gt;Going Further&lt;/h2&gt;
+
+&lt;p&gt;A nice feature of such configuration is that we can add specific tests for each platform. For instance, in case we want to add a more detailed test for our Kotlin/Native target, we’ll just need to create a new test folder in the myframework-ios subproject – without forgetting to add such folder as &lt;code class=&quot;highlighter-rouge&quot;&gt;srcDir&lt;/code&gt; inside the &lt;code class=&quot;highlighter-rouge&quot;&gt;build.gradle&lt;/code&gt; file.&lt;/p&gt;
+
+&lt;h2 id=&quot;wrapping-up&quot;&gt;Wrapping Up&lt;/h2&gt;
+
+&lt;p&gt;As seen in this post, configuring a test environment for Multiplatform tests is just a matter of adding a few lines of code. Once we get the right setup, tests will be run on all the targeted platforms with little effort.&lt;/p&gt;</content><author><name>Simone Civetta</name></author><summary type="html">Conceiving your app as modular can be greatly beneficial to your codebase’s health. In particular, designing a separation between your view and business logic can decrease the coupling between your layers and improve maintainability as well as testability. Tests are indeed your app’s best friends, as they can, at the same time, verify the code you wrote works as intended and act as a specification for the implemented functionality.</summary></entry><entry><title type="html">Sharing frameworks between iOS and Android with Kotlin Multiplatform</title><link href="http://viteinfinite.com/viteinfinitecom/2018/03/sharing-frameworks-between-ios-and-android-with-kotlin-multiplatform/" rel="alternate" type="text/html" title="Sharing frameworks between iOS and Android with Kotlin Multiplatform" /><published>2018-03-01T02:36:12+00:00</published><updated>2018-03-01T02:36:12+00:00</updated><id>http://viteinfinite.com/viteinfinitecom/2018/03/sharing-frameworks-between-ios-and-android-with-kotlin-multiplatform</id><content type="html" xml:base="http://viteinfinite.com/viteinfinitecom/2018/03/sharing-frameworks-between-ios-and-android-with-kotlin-multiplatform/">&lt;p&gt;Today we’ll see how to use Kotlin code to write a cross platform module that can be shared between an iOS and an Android app.&lt;/p&gt;
+
+&lt;p&gt;Since the support for building iOS frameworks, introduced with &lt;a href=&quot;https://blog.jetbrains.com/kotlin/2017/12/kotlinnative-v0-5-released-calling-kotlin-from-swift-and-c-llvm-5-and-more/&quot;&gt;Kotlin/Native 0.5&lt;/a&gt; in December 2017, it has been possible to use the same code for creating libraries for both Android (.aar) and iOS (.framework). A couple of months later, &lt;a href=&quot;https://blog.jetbrains.com/kotlin/2018/02/kotlinnative-v0-6-is-here/&quot;&gt;Kotlin/Native 0.6&lt;/a&gt; officially supports this use case, thanks to the support of &lt;a href=&quot;https://kotlinlang.org/docs/reference/multiplatform.html&quot;&gt;Multiplatform&lt;/a&gt;, a new functionality focused on sharing code across platforms, introduced in the &lt;a href=&quot;https://blog.jetbrains.com/kotlin/2017/11/kotlin-1-2-released/&quot;&gt;version 1.2 of the Kotlin language&lt;/a&gt;.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;hr /&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;🇫🇷 &lt;em&gt;Parlez-vous Français&lt;/em&gt; ? You can read a &lt;a href=&quot;https://blog.xebia.fr/2018/03/13/creer-des-modules-partages-entre-android-et-ios-avec-kotlin-multiplatform/&quot;&gt;French Version of this post&lt;/a&gt; on our blog at &lt;a href=&quot;http://blog.xebia.fr&quot;&gt;Xebia France&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;Today’s goal will be to create two modules, one for iOS and another one for Android, sharing a common interface but providing slightly different implementations, both written in Kotlin.&lt;/p&gt;
+
+&lt;p&gt;Multiplatform supports a DSL bringing two new kinds of modules:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;“Common”: they contain code that is not specific to any platform, and unimplemented (“apxpect”) placeholder declarations that need to rely on a platform-specific implementation&lt;/li&gt;
+  &lt;li&gt;“Platform”: they contain platform-specific code that implement the placeholder declarations in the common module. Platform modules can also contain other platform-dependent code.&lt;/li&gt;
+  &lt;li&gt;“Regular”: they regroup those modules which are neither “Common” nor “Platform”.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;A good example for this need is File I/O: as expected, any implementation of file access or networking is beyond the scope of Kotlin Standard Library. So, in case our commons module wants to use the file system, it’ll have to rely on two different underlying implementations which are platform dependent. For instance, to access files on Android, we would be using the &lt;code class=&quot;highlighter-rouge&quot;&gt;Java.io.File&lt;/code&gt; while on iOS we would rather use &lt;code class=&quot;highlighter-rouge&quot;&gt;NSFileManager&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;So, let’s begin where we left in our previous post about &lt;a href=&quot;http://viteinfinite.com/2018/02/creating-an-ios-framework-with-kotlin/&quot;&gt;the creation of iOS frameworks with Kotlin/Native&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Our module didn’t do anything except returning a string value. So, we’ll modify this behaviour by making our function return a different value depending on the system our module runs on. Our two implementations will be packaged under two different forms: an Android Archive (.aar) for Android and a Framework for iOS.&lt;/p&gt;
+
+&lt;p&gt;In order to do this we have to slightly change our project structure by adding two new folders corresponding to the &lt;em&gt;Platform&lt;/em&gt; modules (&lt;em&gt;myframework-ios&lt;/em&gt; and &lt;em&gt;myframework-android&lt;/em&gt;), and create a directory tree containing “src/main/kotlin/fr/xebia/myframework” in both of them.&lt;/p&gt;
+
+&lt;p&gt;The resulting file tree should now be as follows:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true &quot;&gt;├── build.gradle
+├── gradle
+├── gradlew
+├── gradlew.bat
+├── myframework
+│   ├── build.gradle
+│   └── src
+│       └── main
+│           └── kotlin
+│               └── fr
+│                   └── xebia
+│                       └── myframework
+│                           └── foo.kt
+├── myframework-android
+│   └── src
+│       └── main
+│           └── kotlin
+│               └── fr
+│                   └── xebia
+│                       └── myframework
+├── myframework-ios
+│   └── src
+│       └── main
+│           └── kotlin
+│               └── fr
+│                   └── xebia
+│                       └── myframework
+└── settings.gradle&lt;/pre&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;h2 id=&quot;the-common-project&quot;&gt;The common project&lt;/h2&gt;
+
+&lt;h3 id=&quot;settingsgradle&quot;&gt;Settings.gradle&lt;/h3&gt;
+
+&lt;p&gt;Now, we have to make sure Gradle recognises myrframework-android as part of our project. To do this, we need to edit our settings.gradle file and, in the second line, add &lt;code class=&quot;highlighter-rouge&quot;&gt;:myframework-android&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;:myframework-ios&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;The complete file contents are:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true &quot;&gt;rootProject.name = 'MyProject'
+include ':myframework', ‘:myframework-android', ‘:myframework-ios'
+&lt;/pre&gt;
+
+&lt;p&gt;We can now run&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true &quot;&gt;./gradlew tasks&lt;/pre&gt;
+
+&lt;p&gt;to double check your new configuration does not output any error.&lt;/p&gt;
+
+&lt;h3 id=&quot;buildgradle&quot;&gt;build.gradle&lt;/h3&gt;
+
+&lt;p&gt;Time to modify our build tasks: in our main build.gradle, we’ll have to change the kotlin version to &lt;em&gt;1.2.30&lt;/em&gt;. This is needed in order to use the Multiplatform feature on Android.&lt;/p&gt;
+
+&lt;p&gt;The new, complete build.gradle is as follows:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true&quot;&gt;allprojects {
+    buildscript {
+        ext.kotlin_version = '1.2.30'
+        ext.konan_version = '0.6.1'
+
+        repositories {
+            jcenter()
+        }
+    }
+}&lt;/pre&gt;
+
+&lt;h3 id=&quot;back-to-the-code&quot;&gt;Back to the code&lt;/h3&gt;
+
+&lt;p&gt;Let’s get back to our Foo class. We’d like to provide an extremely basic implementation, in which the &lt;code class=&quot;highlighter-rouge&quot;&gt;bar()&lt;/code&gt; function will return a different string, depending on the OS. On Android, the returned string will be &lt;code class=&quot;highlighter-rouge&quot;&gt;&quot;bar-android&quot;&lt;/code&gt;, while, on iOS, &lt;code class=&quot;highlighter-rouge&quot;&gt;&quot;bar-ios&quot;&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Now, it’s the time to introduce a new keyword: expect. By the means of this we can tell the compiler that this declaration is nothing more than a placeholder – but that we’ll be &lt;strong&gt;expect&lt;/strong&gt;ing a concrete, &lt;strong&gt;actual&lt;/strong&gt;, implementation from one of our platform-dependent projects.&lt;/p&gt;
+
+&lt;p&gt;So, we’ll modify the Foo.kt file inside the &lt;em&gt;myframework&lt;/em&gt; subproject as follows:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true &quot;&gt;package fr.xebia.myframework
+
+expect class Foo() {
+    fun bar(): String
+}&lt;/pre&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;p&gt;Also, we need to declare that this project supports Multiplatform: in order to do this, we’ll have to modify the &lt;em&gt;build.gradle&lt;/em&gt; at &lt;em&gt;myframework/build.gradle&lt;/em&gt; as follows:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true&quot;&gt;buildscript {
+    dependencies {
+        classpath &quot;org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version&quot;
+    }
+}
+
+apply plugin: 'org.jetbrains.kotlin.platform.common'
+
+dependencies {
+    compile &quot;org.jetbrains.kotlin:kotlin-stdlib-common:$kotlin_version&quot;
+}
+
+repositories {
+    jcenter()
+}&lt;/pre&gt;
+
+&lt;h2 id=&quot;the-actual-implementation&quot;&gt;The &lt;em&gt;actual&lt;/em&gt; implementation&lt;/h2&gt;
+
+&lt;p&gt;So, it’s now time to get to the platform-specific implementations, starting with Android.&lt;/p&gt;
+
+&lt;p&gt;We’ll now add a new build.gradle just inside the  myframework-android, holding the configuration for this subproject.&lt;/p&gt;
+
+&lt;h3 id=&quot;buildgradle-android&quot;&gt;build.gradle (Android)&lt;/h3&gt;
+
+&lt;p&gt;In the new build gradle we’re going to declare that myframework-android provides an implementation that is expected by another project, namely &lt;em&gt;myframework&lt;/em&gt;. We do this by using the &lt;code class=&quot;highlighter-rouge&quot;&gt;expectedBy&lt;/code&gt; scope.&lt;/p&gt;
+
+&lt;p&gt;Also, and foremost, let’s not forget we’re building an Android library here, so we’ll have to add all the settings required by such context, under the ‘android’ property.&lt;/p&gt;
+
+&lt;p&gt;Here’s how the build.gradle file looks like for the &lt;em&gt;myframework-android&lt;/em&gt; subproject:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true&quot;&gt;buildscript {
+    repositories {
+        google()
+    }
+
+    dependencies {
+        classpath &quot;org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version&quot;
+        classpath 'com.android.tools.build:gradle:3.0.1'
+    }
+}
+
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-platform-android'
+
+android {
+    compileSdkVersion 26
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 26
+        versionCode 1
+        versionName '1.0'
+    }
+
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
+    }
+}
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    implementation &quot;org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version&quot;
+    expectedBy project(':myframework')
+}
+&lt;/pre&gt;
+
+&lt;h3 id=&quot;androidmanifest&quot;&gt;AndroidManifest&lt;/h3&gt;
+
+&lt;p&gt;Since we’re building an .aar, we also need for an &lt;em&gt;AndroidManifest.xml&lt;/em&gt;, which is required by the targets.&lt;/p&gt;
+
+&lt;p&gt;In this project, we’ll add, inside the &lt;em&gt;myframework-android/src/main&lt;/em&gt; folder, &lt;a href=&quot;https://github.com/xebia-france/kotlin-ios-framework/blob/feature/multiplatform/myframework-android/src/main/AndroidManifest.xml&quot;&gt;a simple manifest file&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;code&quot;&gt;Code&lt;/h3&gt;
+
+&lt;p&gt;It is the time to provide the platform-specific implementation. In this extremely basic implementation, the &lt;code class=&quot;highlighter-rouge&quot;&gt;bar()&lt;/code&gt; function will return a different string, depending on the OS. On Android, the returned string will be &lt;code class=&quot;highlighter-rouge&quot;&gt;&quot;bar-android&quot;&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;In order to do this, we have to make sure our “actual” implementation:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Belongs to the same package as the base (or “expect”) implementation&lt;/li&gt;
+  &lt;li&gt;Uses the keywords “actual”, both before class (and optionally before its constructor) and before the actual function implementation.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;The result is as follows:&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true &quot;&gt;package fr.xebia.myframework
+
+actual class Foo {
+    actual fun bar() = &quot;bar-android&quot;
+}&lt;/pre&gt;
+
+&lt;h2 id=&quot;ios&quot;&gt;iOS&lt;/h2&gt;
+
+&lt;p&gt;Creating the iOS counterpart doesn’t differ much from what we learned in &lt;a href=&quot;http://viteinfinite.com/2018/02/creating-an-ios-framework-with-kotlin/&quot;&gt;our previous article&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;First of all, we have to add a new build.gradle file containing the konan (i.e., the Kotlin/Native compiler) definitions. As mentioned, the build.gradle file should look quite familiar now, with the exception of the &lt;code class=&quot;highlighter-rouge&quot;&gt;enableMultiplatform true&lt;/code&gt; directive, enabling the Multiplatform support in this subproject.&lt;/p&gt;
+
+&lt;p&gt;As we did in the Android counterpart, the &lt;code class=&quot;highlighter-rouge&quot;&gt;expectedBy&lt;/code&gt; directive under &lt;code class=&quot;highlighter-rouge&quot;&gt;dependencies&lt;/code&gt; tells gradle that our project contains the “actual” implementation of &lt;em&gt;myframework&lt;/em&gt;.&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true&quot;&gt;apply plugin: 'konan'
+
+buildscript {
+    repositories {
+        maven {
+            url ‘https://dl.bintray.com/jetbrains/kotlin-native-dependencies'
+        }
+    }
+    dependencies {
+        classpath &quot;org.jetbrains.kotlin:kotlin-native-gradle-plugin:$konan_version&quot;
+    }
+}
+
+konanArtifacts {
+    framework('KotlinMyFramework', targets: ['iphone', 'iphone_sim']) {
+        srcDir 'src/main/kotlin'
+
+        enableMultiplatform true
+    }
+}
+
+dependencies {
+    expectedBy project(':myframework')
+}&lt;/pre&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;h3 id=&quot;code-1&quot;&gt;Code&lt;/h3&gt;
+
+&lt;p&gt;The code is once again a matter of few lines. We’ll be adding a &lt;em&gt;Foo.kt&lt;/em&gt; class inside &lt;em&gt;myframework-ios/src/main/kotlin/fr/xebia/myframework&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;In this case, the “actual” implementation of the &lt;code class=&quot;highlighter-rouge&quot;&gt;Foo&lt;/code&gt; class will return the string &lt;code class=&quot;highlighter-rouge&quot;&gt;bar-ios&lt;/code&gt;. Once again, in order for the class to match the “expected” one, we must remember to declare the &lt;code class=&quot;highlighter-rouge&quot;&gt;package&lt;/code&gt; this file lives in.&lt;/p&gt;
+
+&lt;p&gt;And here is the full implementation:&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true &quot;&gt;package fr.xebia.myframework
+
+actual class Foo {
+    actual fun bar() = &quot;bar-ios&quot;
+}&lt;/pre&gt;
+
+&lt;h2 id=&quot;building&quot;&gt;Building&lt;/h2&gt;
+
+&lt;p&gt;And that’s all. By running&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true &quot;&gt;./gradlew tasks&lt;/pre&gt;
+
+&lt;p&gt;we should now be able to get all the iOS (e.g. &lt;code class=&quot;highlighter-rouge&quot;&gt;konanCompile&lt;/code&gt;) and Android tasks.&lt;/p&gt;
+
+&lt;p&gt;We can build both iOS and Android at the same time by running, from our project folder.&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true &quot;&gt;./gradlew build&lt;/pre&gt;
+
+&lt;p&gt;The artefacts will be created in the &lt;em&gt;myframework-ios/build&lt;/em&gt; and &lt;em&gt;myframework-android/build&lt;/em&gt; folders.&lt;/p&gt;
+
+&lt;p&gt;You can get a complete example of the code above from &lt;a href=&quot;https://github.com/xebia-france/kotlin-ios-framework/tree/feature/multiplatform&quot;&gt;the feature/multiplatform branch of this repo&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;wrapping-up&quot;&gt;Wrapping Up&lt;/h2&gt;
+
+&lt;p&gt;As we’ve seen, the workflow introduced by Kotlin multiplatform is pretty straightforward and has been quickly implemented in Kotlin/Native. I can say I am quite surprised to see so many features getting implemented into Kotlin and Kotlin/Native and I’m really looking forward to seeing the reception of mobile developers in respect to such tools.&lt;/p&gt;
+
+&lt;h2 id=&quot;credits&quot;&gt;Credits&lt;/h2&gt;
+
+&lt;p&gt;Once again, I particularly wish to thank my fellow colleagues at &lt;a href=&quot;http://blog.xebia.fr&quot;&gt;Xebia&lt;/a&gt;, Bastien Bonnet, Sergio Dos Santos and Benjamin Lacroix, for thoroughly reviewing this article.&lt;/p&gt;</content><author><name>Simone Civetta</name></author><summary type="html">Today we’ll see how to use Kotlin code to write a cross platform module that can be shared between an iOS and an Android app. Since the support for building iOS frameworks, introduced with Kotlin/Native 0.5 in December 2017, it has been possible to use the same code for creating libraries for both Android (.aar) and iOS (.framework). A couple of months later, Kotlin/Native 0.6 officially supports this use case, thanks to the support of Multiplatform, a new functionality focused on sharing code across platforms, introduced in the version 1.2 of the Kotlin language.</summary></entry><entry><title type="html">Creating an iOS framework with… Kotlin</title><link href="http://viteinfinite.com/viteinfinitecom/2018/02/creating-an-ios-framework-with-kotlin/" rel="alternate" type="text/html" title="Creating an iOS framework with… Kotlin" /><published>2018-02-21T18:55:22+00:00</published><updated>2018-02-21T18:55:22+00:00</updated><id>http://viteinfinite.com/viteinfinitecom/2018/02/creating-an-ios-framework-with-kotlin</id><content type="html" xml:base="http://viteinfinite.com/viteinfinitecom/2018/02/creating-an-ios-framework-with-kotlin/">&lt;p&gt;&lt;a href=&quot;https://kotlinlang.org/docs/reference/native-overview.html&quot;&gt;Kotlin/Native&lt;/a&gt; is a new Kotlin dialect which supports compiling code in an executable form that can be run on the targeted system, without needing for a JVM. The Kotlin/Native compiler, named Konan, interfaces with the LLVM compiler infrastructure in order to support a number of targets, such as Linux, macOS, iOS, Web Assembly and others.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;hr /&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;🇫🇷 &lt;em&gt;Parlez-vous Français&lt;/em&gt; ? You can read &lt;a href=&quot;https://blog.xebia.fr/2018/02/21/creer-un-framework-ios-en-kotlin/&quot;&gt;a French Version of this post&lt;/a&gt; on our blog at &lt;a href=&quot;http://blog.xebia.fr&quot;&gt;Xebia France&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;First announced in April, Kotlin/Native &lt;a href=&quot;https://blog.jetbrains.com/kotlin/2018/02/kotlinnative-v0-6-is-here/&quot;&gt;has now reached v0.6&lt;/a&gt;, published in February 2018. Since its &lt;a href=&quot;https://blog.jetbrains.com/kotlin/2017/12/kotlinnative-v0-5-released-calling-kotlin-from-swift-and-c-llvm-5-and-more/&quot;&gt;version 0.5&lt;/a&gt; Kotlin/Native introduces a new target, which can particularly be useful for iOS projects, that is iOS frameworks.&lt;/p&gt;
+
+&lt;p&gt;In this article, we’ll see how to create an iOS framework using Kotlin code. Our library will actually do nothing too fancy, but it’ll be a great starting point for future evolutions.&lt;/p&gt;
+
+&lt;p&gt;Please note that to complete this tutorial you will need a machine running macOS and Xcode 9.2.&lt;/p&gt;
+
+&lt;h2 id=&quot;how-konan-works&quot;&gt;How Konan works&lt;/h2&gt;
+
+&lt;p&gt;As mentioned above, Konan interfaces with the LLVM backend compiler in order to support a number of targets, such as Linux, macOS, iOS, Web Assembly and others. The LLVM compiler takes as input an intermediate representation (IR, or LLVM-IR) and generates machine code (or, better, object code) for a number of supported CPU architectures (such as ARM, x86 and many others).&lt;/p&gt;
+
+&lt;p&gt;In other words, Konan will compile Kotlin code to LLVM-IR and LLVM will take care of the rest, by compiling LLVM-IR down to ARM (or other CPUs).&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://viteinfinite.com/wp-content/uploads/2018/02/LLVM-Step-2.png&quot;&gt;&lt;img class=&quot;aligncenter wp-image-174576743 size-large&quot; src=&quot;http://viteinfinite.com/wp-content/uploads/2018/02/LLVM-Step-2-1024x576.png&quot; alt=&quot;Kotlin and LLVM&quot; width=&quot;660&quot; height=&quot;371&quot; srcset=&quot;http://viteinfinite.com/wp-content/uploads/2018/02/LLVM-Step-2-1024x576.png 1024w, http://viteinfinite.com/wp-content/uploads/2018/02/LLVM-Step-2-300x169.png 300w, http://viteinfinite.com/wp-content/uploads/2018/02/LLVM-Step-2-768x432.png 768w, http://viteinfinite.com/wp-content/uploads/2018/02/LLVM-Step-2.png 1600w&quot; sizes=&quot;(max-width: 660px) 100vw, 660px&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;before-we-start-gradle&quot;&gt;Before we start: Gradle&lt;/h2&gt;
+
+&lt;p&gt;In order to complete this tutorial, you’ll need to &lt;a href=&quot;https://gradle.org/install/&quot;&gt;install Gradle&lt;/a&gt; first. If you’ve never stumbled on it, Gradle is the main build tool in the JVM environment and it is used by the vast majority of Android projects. With Gradle, we’ll be able to define dependencies, and define tasks that will take care of compiling our project. Also, and foremost, gradle is easily extendable via plugins, and we’ll actually use one of them to help us creating the tasks we need to create our framework.&lt;/p&gt;
+
+&lt;p&gt;The easiest way to install Gradle is via Homebrew:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default highlight:0 decode:true&quot;&gt;brew install gradle&lt;/pre&gt;
+
+&lt;h2 id=&quot;project-setup&quot;&gt;Project Setup&lt;/h2&gt;
+
+&lt;p&gt;We then create a new project folder, for instance “MyProject”. We can now open the shell inside “MyProject” and run&lt;/p&gt;
+
+&lt;div&gt;
+  &lt;pre class=&quot;lang:default highlight:0 decode:true &quot;&gt;gradle init&lt;/pre&gt;
+  
+  &lt;p&gt;
+    This operation will create the basic configuration for our project.
+  &lt;/p&gt;
+&lt;/div&gt;
+
+&lt;div&gt;
+  Now, we’ll need to add the following resources to “MyProject”:
+&lt;/div&gt;
+
+&lt;div&gt;
+  &lt;ul&gt;
+    &lt;li&gt;
+      An empty gradle.properties file
+    &lt;/li&gt;
+    &lt;li&gt;
+      A folder, named “myframework”, which will contain code and properties for our library
+    &lt;/li&gt;
+    &lt;li&gt;
+      Inside the “myframework” folder, we’ll be adding: &lt;ul&gt;
+        &lt;li&gt;
+          A tree of folders as follows: &lt;em&gt;src/main/kotlin/fr/xebia/myframework&lt;/em&gt;
+        &lt;/li&gt;
+        &lt;li&gt;
+          Another empty build.gradle file
+        &lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/div&gt;
+
+&lt;p&gt;The result should now be as follows:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default highlight:0 decode:true&quot;&gt;
+├── build.gradle
+├── gradle
+├── gradlew
+├── gradlew.bat
+├── myframework
+│   ├── build.gradle
+│   └── src
+│       └── main
+│           └── kotlin
+│               └── fr
+│                   └── xebia
+│                       └── myframework
+└── settings.gradle
+&lt;/pre&gt;
+
+&lt;p&gt;This structure follows the conventions of most Java and Kotlin projects and allows us to prepare our project to host other subprojects in the future in case we need it (and we sure will in a future post).&lt;/p&gt;
+
+&lt;h2 id=&quot;configuring-the-environment&quot;&gt;Configuring the environment&lt;/h2&gt;
+
+&lt;p&gt;Now we’ll be setting the basic properties of our environment.&lt;/p&gt;
+
+&lt;p&gt;The settings.gradle file should reference reference the modules of the project we’re building. In our case, it’s “myframework”, so we’ll add to the file the following line:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default highlight:0 decode:true &quot;&gt;include :myframework&lt;/pre&gt;
+
+&lt;p&gt;The root build.gradle file will contain the main configuration used throughout our project and subproject. In particular, we’ll set the kotlin_version to be used (1.2.21) and the version of the compiler (0.6). We also set which repositories will be used by our build script, i.e. jCenter.&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default highlight:0 decode:true &quot;&gt;
+allprojects {
+  buildscript {
+      ext.kotlin_version = '1.2.21'
+      ext.konan_version = '0.6'
+
+      // The repositories used by all the build.gradle files in our project.
+      repositories {
+          jcenter()
+      }
+  }
+}
+&lt;/pre&gt;
+
+&lt;h2 id=&quot;configuring-the-myframeworksubproject&quot;&gt;Configuring the “myframework” subproject&lt;/h2&gt;
+
+&lt;p&gt;Let’s open the build.gradle contained in the “myframework” subproject. This file instructs Konan on what and how it will need to handle the compilation.&lt;/p&gt;
+
+&lt;p&gt;In particular, via the apply plugin directive, we’ll define the plugin to be used in our context: ‘konan’, which is of course, the plugin used for easily interfacing with the Kotlin/Native compiler.&lt;/p&gt;
+
+&lt;p&gt;Also, we’ll instruct our script about its repository: i.e., maven, and its dependency, the &lt;em&gt;kotlin-native-gradle-plugin&lt;/em&gt;.&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default highlight:0 decode:true&quot;&gt;
+// The ‘konan’ plugin creates a nice interface between gradle and the Kotlin/Native compiler.
+apply plugin: 'konan' 
+buildscript {
+    // The repositories used by this build.gradle file. They contains the dependencies needed to apply the ‘konan’ plugin. 
+    repositories {
+        maven {
+            url &quot;https://dl.bintray.com/jetbrains/kotlin-native-dependencies&quot;
+        }
+    }
+
+    // The dependencies used by this build.gradle file
+    dependencies {
+        classpath &quot;org.jetbrains.kotlin:kotlin-native-gradle-plugin:$konan_version&quot;
+    }
+}
+&lt;/pre&gt;
+
+&lt;p&gt;Finally, we’ll add to the same build.gradle file the directives for creating the iOS framework. We’ll be targeting iPhone and the iPhone Simulator, which are based on two different architectures, namely ARM for the iPhone and x86 for the Simulator. We’re also setting, in the framework parameters, the output file name of our task: ‘MyKotlinFramework’.&lt;/p&gt;
+
+&lt;p&gt;Here, we’ll also indicate which folder contains our source code, in our case &lt;em&gt;src/main/kotlin&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Not much else to see here, apart from enabling the debugging mode, via the &lt;code&gt;enableDebug true&lt;/code&gt; line.&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default highlight:0 decode:true&quot;&gt;
+// The binaries that will be produced by konan
+konanArtifacts {
+    framework('MyKotlinFramework', targets: ['iphone', 'iphone_sim']) {
+        srcDir 'src/main/kotlin'
+
+        enableDebug true
+    }
+}
+&lt;/pre&gt;
+
+&lt;h2 id=&quot;adding-some-source-code&quot;&gt;Adding some source code&lt;/h2&gt;
+
+&lt;p&gt;Now it’s finally the time to add some Kotlin code.&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default highlight:0 decode:true &quot;&gt;package fr.xebia.myframework
+class Foo() {
+    fun bar() = &quot;bar&quot;
+}
+&lt;/pre&gt;
+
+&lt;p&gt;As you clearly understand, this code doesn’t do much, but it’s enough to try out the basic functionalities of Kotlin/Native.&lt;/p&gt;
+
+&lt;h2 id=&quot;compiling&quot;&gt;Compiling&lt;/h2&gt;
+
+&lt;p&gt;That’s pretty much all. We just need to compile our project by running grade.&lt;/p&gt;
+
+&lt;p&gt;Before doing this, let’s just run&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true&quot;&gt;./gradlew tasks&lt;/pre&gt;
+
+&lt;p&gt;This should output a number of tasks preconfigured by Gradle. Among them, the &lt;code&gt;compileKonan&lt;/code&gt; task, &lt;code&gt;compileKonanMyKotlinFrameworkIphone&lt;/code&gt;, &lt;code&gt;compileKonanMyKotlinFrameworkIphone_sim&lt;/code&gt; are automatically created by the &lt;em&gt;konan&lt;/em&gt; plugin applied in the build.gradle file: as the names say, they will compile code and produce frameworks for iPhone and iPhone simulator.&lt;/p&gt;
+
+&lt;p&gt;We can now run&lt;/p&gt;
+
+&lt;pre class=&quot;lang:default decode:true &quot;&gt;./gradlew compileKonan&lt;/pre&gt;
+
+&lt;p&gt;and wait for the project to compile. Please note that Gradle will also take care of automatically downloading the Kotlin/Native compiler for us – even though this’ll take a while.&lt;/p&gt;
+
+&lt;p&gt;When the compilation is finished (it may take a little while at the time of writing), verify the contents of the folder &lt;em&gt;myframework/build/konan/bin/iphone_sim&lt;/em&gt;: they should contain three files:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;MyKotlinFramework.framework&lt;/li&gt;
+  &lt;li&gt;MyKotlinFramework.framework.dSYM&lt;/li&gt;
+  &lt;li&gt;MyKotlinFramework.kt.bc&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;What are those three files?&lt;/p&gt;
+
+&lt;p&gt;The first one is, of course the framework we’ve just produced. The second file, having the dSYM extension, contains the information needed to debug our framework with an lldb debugger, such as the one provided by Xcode. Last, the .kt.bc file is the bitcode file of our program. In other words, it is the binary form of the LLVM Intermediate Representation of our code.&lt;/p&gt;
+
+&lt;h2 id=&quot;integrating-in-an-ios-application&quot;&gt;Integrating in an iOS application&lt;/h2&gt;
+
+&lt;p&gt;In order to try how the framework runs in our iOS app, let’s add it to the “Embedded Binaries” section of our target.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://viteinfinite.com/wp-content/uploads/2018/02/Screen-Shot-2018-02-19-at-10.28.11.png.png&quot;&gt;&lt;img class=&quot;aligncenter wp-image-174576742 size-large&quot; src=&quot;http://viteinfinite.com/wp-content/uploads/2018/02/Screen-Shot-2018-02-19-at-10.28.11.png-1024x887.png&quot; alt=&quot;Embedded Binaries Section&quot; width=&quot;660&quot; height=&quot;572&quot; srcset=&quot;http://viteinfinite.com/wp-content/uploads/2018/02/Screen-Shot-2018-02-19-at-10.28.11.png-1024x887.png 1024w, http://viteinfinite.com/wp-content/uploads/2018/02/Screen-Shot-2018-02-19-at-10.28.11.png-300x260.png 300w, http://viteinfinite.com/wp-content/uploads/2018/02/Screen-Shot-2018-02-19-at-10.28.11.png-768x666.png 768w&quot; sizes=&quot;(max-width: 660px) 100vw, 660px&quot; /&gt;&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Then, in our Swift code, we’ll just need to import the library and use the bar() method of our Foo class. As you’ll see, please note that Konan prefixes all your classes with the trigram of your framework output name. In our case, &lt;strong&gt;M&lt;/strong&gt;y&lt;strong&gt;K&lt;/strong&gt;otlin&lt;strong&gt;F&lt;/strong&gt;ramework. In our case, the Foo class will become visible in Objective-C and Swift as MKFFoo.&lt;/p&gt;
+
+&lt;pre class=&quot;lang:swift decode:true&quot;&gt;import MyKotlinFramework
+// ...
+  func something() {
+      let bar = MKFFoo().bar()
+      print(bar)
+  }&lt;/pre&gt;
+
+&lt;p&gt;The complete code of this tutorial is available &lt;a href=&quot;https://github.com/xebia-france/kotlin-ios-framework/tree/master&quot;&gt;at this GitHub repo&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;where-to-go-from-here&quot;&gt;Where to go from here?&lt;/h2&gt;
+
+&lt;p&gt;Needless to say, this is just the beginning. Thanks to Kotlin/Native 0.6 it is now easy to share code between iOS and Android, by using the Multiplatform DSL. This will allow for a more effective reuse of your business logic between your mobile apps, no matter the platform.&lt;/p&gt;
+
+&lt;h2 id=&quot;credits&quot;&gt;Credits&lt;/h2&gt;
+
+&lt;p&gt;Huge thanks to my colleagues at Xebia France for reviewing this article, in particular Sergio Dos Santos, Benjamin Lacroix, Michaël Ohayon and Julien Datour.&lt;/p&gt;</content><author><name>Simone Civetta</name></author><summary type="html">Kotlin/Native is a new Kotlin dialect which supports compiling code in an executable form that can be run on the targeted system, without needing for a JVM. The Kotlin/Native compiler, named Konan, interfaces with the LLVM compiler infrastructure in order to support a number of targets, such as Linux, macOS, iOS, Web Assembly and others.</summary></entry><entry><title type="html">Kotlin/Native 0.5 and iOS</title><link href="http://viteinfinite.com/viteinfinitecom/2018/01/kotlinnative-0-5-and-ios/" rel="alternate" type="text/html" title="Kotlin/Native 0.5 and iOS" /><published>2018-01-01T23:11:54+00:00</published><updated>2018-01-01T23:11:54+00:00</updated><id>http://viteinfinite.com/viteinfinitecom/2018/01/kotlinnative-0-5-and-ios</id><content type="html" xml:base="http://viteinfinite.com/viteinfinitecom/2018/01/kotlinnative-0-5-and-ios/">&lt;p&gt;Kotlin Native interoperability is rapidly evolving and the &lt;a href=&quot;https://github.com/JetBrains/kotlin-native/releases/tag/v0.5&quot;&gt;latest iteration, version 0.5&lt;/a&gt;, brings support for calling Kotlin code from Swift and Objective-C.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;p&gt;Also, iPhone Simulator is now supported out of the box. Just run&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true&quot;&gt;./gradlew iphone_simPlatformLibs
+./gradlew iphone_simCrossDistRuntime&lt;/pre&gt;
+
+&lt;p&gt;to compile the Kotlin bridge for the iOS Simulator platform libs and runtime. The command will take about 1 hour to complete on a recent MacBook Pro.&lt;/p&gt;
+
+&lt;p&gt;Also, &lt;a href=&quot;https://github.com/JetBrains/kotlin-native/tree/master/samples&quot;&gt;the samples&lt;/a&gt; have been adapted and you will now be able to try out the features straight on your simulator.&lt;/p&gt;
+
+&lt;p&gt;And that’s pretty neat.&lt;/p&gt;</content><author><name>Simone Civetta</name></author><summary type="html">Kotlin Native interoperability is rapidly evolving and the latest iteration, version 0.5, brings support for calling Kotlin code from Swift and Objective-C.</summary></entry><entry><title type="html">Running a Kotlin/Native iOS app in the Simulator</title><link href="http://viteinfinite.com/viteinfinitecom/2017/11/running-a-kotlinnative-ios-app-in-the-simulator/" rel="alternate" type="text/html" title="Running a Kotlin/Native iOS app in the Simulator" /><published>2017-11-25T13:59:09+00:00</published><updated>2017-11-25T13:59:09+00:00</updated><id>http://viteinfinite.com/viteinfinitecom/2017/11/running-a-kotlinnative-ios-app-in-the-simulator</id><content type="html" xml:base="http://viteinfinite.com/viteinfinitecom/2017/11/running-a-kotlinnative-ios-app-in-the-simulator/">&lt;p&gt;Kotlin Native 0.4 is out since the beginning of November and, with it, some nice sample iOS demo apps to be run into your favourite iOS device. That sounds amazing, even for some hardcore Swift fans like me. Yet, there’s a catch: the sample apps can only run on a &lt;em&gt;real&lt;/em&gt; iOS device but not in the Simulator. Sure, that’s just an unsignificant drawback compared to what the Kotlin Native team achieved so far. Still, I’m a huge fan of the iOS Simulator, as it’s by far the fastest way to do some quick testing of an app while doing a pretty good job in mimicking the behaviour of an app on a real device.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;&lt;strong&gt;Update:&lt;/strong&gt; since &lt;a href=&quot;http://viteinfinite.com/2018/01/kotlinnative-0-5-and-ios/&quot;&gt;Kotlin/Native 0.5&lt;/a&gt;, the following article is now outdated. I’ll be keeping its content for reference.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;So, as a way to understand the Kotlin Native project, I decided to try supporting the Simulator on a Kotln Native iOS app.&lt;/p&gt;
+
+&lt;p&gt;In order to do this, I started from the UIKit project sample found in the samples dir of the main repo and tried to make it run in the sim.&lt;/p&gt;
+
+&lt;p&gt;The first element to be considered when building for the simulator is obviously that this platform runs on the x86_64 architecture, compared to the armv7s of a real device.&lt;/p&gt;
+
+&lt;p&gt;To follow this tutorial, please clone the Kotlin/Native repo from &lt;a href=&quot;https://github.com/JetBrains/kotlin-native&quot;&gt;https://github.com/JetBrains/kotlin-native&lt;/a&gt;. This repository contains all the sources to build &lt;strong&gt;konan&lt;/strong&gt;, the kotlin compiler for native targets.&lt;/p&gt;
+
+&lt;h2 id=&quot;1-the-target&quot;&gt;1. The Target&lt;/h2&gt;
+
+&lt;p&gt;First thing I discovered when reading some of the KN source code, was that the iPhone Simulator support has been considered and partially implemented. Just, it was not active.&lt;/p&gt;
+
+&lt;p&gt;In the KonanTarget.kt file, which manages which targets are actually available in the platforms, the line the &lt;code class=&quot;highlighter-rouge&quot;&gt;KonanTarget.IPHONE_SIM.enabled = true&lt;/code&gt; was simply commented out. So, let’s uncomment it in order for Kotlin to start acknowledging the presence of an iOS Simulator target.&lt;/p&gt;
+
+&lt;p&gt;A minor configuration issue had to be repaired as well. In particular, in the konan.proprerties file, the dependencies.osx-ios_sim at line 75 needs to be changed to:&lt;/p&gt;
+
+&lt;pre class=&quot;show-lang:2 nums:false lang:default highlight:0 decode:true &quot;&gt;dependencies.osx-ios_sim = target-sysroot-1-darwin-macos \
+libffi-3.2.1-2-darwin-ios-sim \
+clang-llvm-3.9.0-darwin-macos \
+target-sysroot-1-darwin-ios-sim&lt;/pre&gt;
+
+&lt;p&gt;It’s now time to build the compiler, by following the (few) steps described in the README.md of the Kotlin/Native project.&lt;/p&gt;
+
+&lt;p&gt;In particular, we’ll have to execute&lt;/p&gt;
+
+&lt;pre class=&quot;&quot;&gt;./gradlew dist distPlatformLibs&lt;/pre&gt;
+
+&lt;h2 id=&quot;2-configuring-the-uikit-project&quot;&gt;2. Configuring the uikit project&lt;/h2&gt;
+
+&lt;p&gt;Next step, is to build the uikit project for the simulator. To do that, we simply have to change the &lt;code class=&quot;highlighter-rouge&quot;&gt;konan.targets = ['iphone']&lt;/code&gt; in &lt;em&gt;samples/uikit/build.gradle&lt;/em&gt; to read &lt;code class=&quot;highlighter-rouge&quot;&gt;konan.targets = ['iphone_sim']&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;When I started building, without success, I hoped for some intelligible error message. And, in fact, there it was. Turns out, prior to building, konan downloads a number of dependencies needed for compiling to a specific target. Archives bundling the dependencies are pulled directly from downloads.jetbrains.com, saved to the &lt;em&gt;~/.konan/cache&lt;/em&gt; directory and then extracted to the &lt;em&gt;~/.konan/dependencies&lt;/em&gt; folder.&lt;/p&gt;
+
+&lt;p&gt;In the case of the iOS Simulator, two of those are actually missing from the jetbrains repository: &lt;em&gt;libffi&lt;/em&gt; and &lt;em&gt;target-sysroot&lt;/em&gt;.&lt;/p&gt;
+
+&lt;h2 id=&quot;3-libffi&quot;&gt;3. libffi&lt;/h2&gt;
+
+&lt;p&gt;Libffi is an open-source project providing a Foreign Function Interface. As the libffi repo README says, Libffi is&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;a foreign function interface is the popular name for the interface that allows code written in one language to call code written in another language&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Kotlin Native uses libffi to call Objective-C platform frameworks, such as UIKit or Foundation.&lt;/p&gt;
+
+&lt;p&gt;Unfortunately, while downloads.jetbrains.com provides a compiled libffi library supporting the iphoneos platform, there is no version available for iphonesimulator. So, time to build it from source. Luckily enough, the libffi repo already contains a pre-configured libffi.xcodeproj to build the library, so I just had to download it, generate Darwin headers files (using the generate-darwin-source-and-headers.py script) and producing a static library with Xcode.&lt;/p&gt;
+
+&lt;p&gt;Feel lazy? &lt;a href=&quot;http://viteinfinite.com/wp-content/uploads/2017/11/libffi-3.2.1-2-darwin-ios-sim.tar.gz&quot;&gt;Here is a pre-compiled version&lt;/a&gt;, built with Xcode 9.0.&lt;/p&gt;
+
+&lt;p&gt;It’s now possible to build the library and archive it in a file &lt;em&gt;named libffi-3.2.1-2-darwin-ios-sim.tar.gz&lt;/em&gt;. The archive has then to be inserted into the _~/.konan/cache _folder. This procedure is needed for konan to retrieve the libffi from the cache, instead of trying downloading the archive from the online repository.&lt;/p&gt;
+
+&lt;h2 id=&quot;4-target-sysroot&quot;&gt;4. target-sysroot&lt;/h2&gt;
+
+&lt;p&gt;The target-sysroot is, in this case, the SDK we’re targeting, in other words the iphonesimulator. You can get a list of the sdks installed with Xcode by running&lt;/p&gt;
+
+&lt;pre class=&quot;&quot;&gt;xcrun --sdk iphoneos11.1 --show-sdk-path&lt;/pre&gt;
+
+&lt;p&gt;in the terminal.&lt;/p&gt;
+
+&lt;p&gt;Since we’re looking for the iOS simulator SDK, we’ll be typing again in the terminal&lt;/p&gt;
+
+&lt;pre class=&quot;&quot;&gt;xcrun --sdk iphonesimulator11.1 --show-sdk-path&lt;/pre&gt;
+
+&lt;p&gt;to retrieve the SDK path.&lt;/p&gt;
+
+&lt;p&gt;Normally, the SDK is ready to be used for our app to be built against. Instead, some minor modifications should be added for the compilation to succeed. In particular, I needed to tweak the NSUUID.h header in _&lt;SDK&gt;/System/Library/Frameworks/Foundation.framework/Headers_ to remove the nullability keywords (`_Nonnull` and `_Nullable`) in the interface methods `initWithUUIDBytes:` and `getUUIDBytes:`.&lt;/SDK&gt;&lt;/p&gt;
+
+&lt;p&gt;Of course, the whole folder had to be &lt;em&gt;tarred&lt;/em&gt; to a target-sysroot-1-darwin-ios-sim.tar.gz file and then moved into &lt;em&gt;~/.konan/cache&lt;/em&gt;.&lt;/p&gt;
+
+&lt;p&gt;Once again, this procedure is needed for konan to avoid downloading the archive from the online repository.&lt;/p&gt;
+
+&lt;h2 id=&quot;5-runtime&quot;&gt;5. Runtime&lt;/h2&gt;
+
+&lt;p&gt;Once libffi is build, the target sysroot is retrieved and both are achieved and inserted in the cache folder, it was time to compile the kotlin runtime for the iphonesimulator.&lt;/p&gt;
+
+&lt;p&gt;The runtime will be linked to iOS app during the build process, and this will ultimately allow our kotlin code to access the functions provided by the iOS native frameworks.&lt;/p&gt;
+
+&lt;p&gt;In order to build the runtime for the Simulator, we simply have to cd to our kotlin-native source folder and run&lt;/p&gt;
+
+&lt;pre class=&quot;&quot;&gt;./gradlew iphone_simCrossDistRuntime&lt;/pre&gt;
+
+&lt;p&gt;Building the runtime may take up to 10/15 minutes, so get grab a coffee and please come back more excited than ever.&lt;/p&gt;
+
+&lt;h2 id=&quot;6-project-build-configuration&quot;&gt;6. Project build configuration&lt;/h2&gt;
+
+&lt;p&gt;Alright, all the prerequisites are in place!&lt;/p&gt;
+
+&lt;p&gt;Before running, back to Xcode, let’s change the “Replace Binary” phase to read&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;cp &quot;$SRCROOT/build/konan/bin/iphone_sim/app.kexe&quot; &quot;$TARGET_BUILD_DIR/$EXECUTABLE_PATH&quot;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;And, that’s it. Just build the app as you would normally do and run it in an iOS simulator.&lt;/p&gt;
+
+&lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h2&gt;
+
+&lt;p&gt;To be honest, I’m pretty excited by the result and I can’t wait to do some more with kotlin for iOS.&lt;/p&gt;
+
+&lt;p&gt;As for the technicalities of the articles, even if my initial goal involved some degree of knowledge on subjects I barely know about, turns out that there was not much work to be done after all: in fact, the Kotlin Native team did all the heavy lifting, as the simulator support was almost finished apart from some missing bits.&lt;/p&gt;
+
+&lt;p&gt;Most of all, that was, to some extent, a rewarding task and a good opportunity to submit a PR to the team.&lt;/p&gt;</content><author><name>Simone Civetta</name></author><summary type="html">Kotlin Native 0.4 is out since the beginning of November and, with it, some nice sample iOS demo apps to be run into your favourite iOS device. That sounds amazing, even for some hardcore Swift fans like me. Yet, there’s a catch: the sample apps can only run on a real iOS device but not in the Simulator. Sure, that’s just an unsignificant drawback compared to what the Kotlin Native team achieved so far. Still, I’m a huge fan of the iOS Simulator, as it’s by far the fastest way to do some quick testing of an app while doing a pretty good job in mimicking the behaviour of an app on a real device.</summary></entry><entry><title type="html">Swift on the Raspberry PI</title><link href="http://viteinfinite.com/viteinfinitecom/2017/02/swift-on-the-raspberry-pi-part-1/" rel="alternate" type="text/html" title="Swift on the Raspberry PI" /><published>2017-02-08T20:05:54+00:00</published><updated>2017-02-08T20:05:54+00:00</updated><id>http://viteinfinite.com/viteinfinitecom/2017/02/swift-on-the-raspberry-pi-part-1</id><content type="html" xml:base="http://viteinfinite.com/viteinfinitecom/2017/02/swift-on-the-raspberry-pi-part-1/">&lt;p&gt;In this article we will discover how to use the Swift programming language to write software running on our Raspberry PI. We’ll be reading and writing through the GPIO of our board, connecting a number of widely available components and, at the same time, interacting with a remote sever.&lt;/p&gt;
+
+&lt;p&gt;Here, I’ll be covering how to get started with Swift on a Raspberry PI board.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;p&gt;Swift is a programming language released by Apple in 2014 which has received an ever increasing interest from the mobile community, thanks to its modern patterns, its static typing and its performances.&lt;/p&gt;
+
+&lt;p&gt;Since October 2015, Swift has been Open Sourced and it can now run on a plethora of Linux distributions, making it an interesting, even though experimental, for the development of Server-Side Software.&lt;/p&gt;
+
+&lt;p&gt;Even if, once released, Swift for Linux only was able to run on x86 Hardware only, after some efforts from the community, the language can be compiled, and compile, on ARM machines, such as the really popular Raspberry PI (and its clones), C.H.I.P., and many others.&lt;/p&gt;
+
+&lt;p&gt;The most straightforward way to have Swift running on a ARM Linux distribution is to start from the most widespread of them: Ubuntu. The popular operating system now ships a version specifically built for our favourite single-board computer, named Ubuntu Core. With the words of its own maker, Ubuntu Core is « a tiny, transactional version of Ubuntu for IoT devices and large container deployments. It runs […] secure, remotely upgradeable Linux app packages known as snaps. ». In this series we won’t be using Snaps, but we will instead make use of the traditional layer of Ubuntu, called “classic”.&lt;/p&gt;
+
+&lt;p&gt;The introduction is now over, let’s get started!&lt;/p&gt;
+
+&lt;h2 id=&quot;0-requirements&quot;&gt;0. Requirements&lt;/h2&gt;
+
+&lt;p&gt;In order to complete this tutorial, we need:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;A Micro-SD card of at least 8GB of size (16GB recommended for building Swift from sources)&lt;/li&gt;
+  &lt;li&gt;A Raspberry PI 3&lt;/li&gt;
+  &lt;li&gt;An Ubuntu SSO Account, used to complete the setup of Ubuntu Core.&lt;/li&gt;
+  &lt;li&gt;An external screen for our Raspberry (actually needed only when booting Ubuntu Core for the first time)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;In order to create an Ubuntu account, please refer to the &lt;a href=&quot;https://login.ubuntu.com/&quot;&gt;Ubuntu SSO account&lt;/a&gt; page. Do not forget to add your SSH public key, as it’s needed for logging in to Ubuntu Core.&lt;/p&gt;
+
+&lt;h2 id=&quot;1-installing-ubuntu-core&quot;&gt;1. Installing Ubuntu Core&lt;/h2&gt;
+
+&lt;p&gt;Install Ubuntu Core by following the instructions on the Get Started page of Ubuntu Core: &lt;a href=&quot;https://developer.ubuntu.com/core/get-started/raspberry-pi-2-3&quot;&gt;https://developer.ubuntu.com/core/get-started/raspberry-pi-2-3&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Copy the image onto the micro-SD card, plug the card into the Raspberry PI and boot your Raspberry PI.&lt;/p&gt;
+
+&lt;p&gt;Follow the on-screen setup wizard, type your Ubuntu SSO account email and you’re done.&lt;/p&gt;
+
+&lt;p&gt;You can now simply ssh from your development machine to your Raspberry PI:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true&quot;&gt;ssh &amp;lt;USERNAME&amp;gt;@&amp;lt;RASPBERRY-IP&amp;gt;&lt;/pre&gt;
+
+&lt;h2 id=&quot;2-classic-mode&quot;&gt;2. “classic” mode&lt;/h2&gt;
+
+&lt;p&gt;Despite Ubuntu focus on Snap apps, we won’t be using Ubuntu this feature at the moment, as we need to enable the traditional development mode of our Ubuntu installation, now dubbed classic.&lt;/p&gt;
+
+&lt;p&gt;To do so, run :&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true&quot;&gt;$ sudo snap install classic --edge --devmode
+$ sudo classic&lt;/pre&gt;
+
+&lt;h2 id=&quot;3-update-apt-get&quot;&gt;3. Update apt-get&lt;/h2&gt;
+
+&lt;p&gt;Since the Ubuntu Core installation hasn’t received any repository update yet, it’s now the moment to fetch the packages:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true &quot;&gt;$ sudo apt-get -qq update&lt;/pre&gt;
+
+&lt;h2 id=&quot;4-installing-swift&quot;&gt;4. Installing Swift&lt;/h2&gt;
+
+&lt;p&gt;There are two ways for get Swift running on your installation, the first one being compiling Swift from sources. This operation can take a long amount of time: that is, at least 10 hours on a Raspberry PI 3.&lt;/p&gt;
+
+&lt;p&gt;Luckily, the team over at &lt;a href=&quot;http://iachieved.it&quot;&gt;iachieved.it&lt;/a&gt; have been regularly compiling versions from source and distributing the artefacts via a Jenkins installation available at &lt;a href=&quot;http://swift-arm.ddns.net&quot;&gt;http://swift-arm.ddns.net&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;This is a major simplification in our process, as we will be saving hours of compilation time and get straight to the installation part.&lt;/p&gt;
+
+&lt;p&gt;At the time of writing, the most recent compiled version dates December, 21st 2016, as the machine used for compiling seems to have been offline for the past 30 or so days. The compiled Swift version is the 3.0.1-dev rather than the current 3.0.2 but that doesn’t affect in any way our setup.&lt;/p&gt;
+
+&lt;p&gt;So, let’s install wget from apt-get, which will allows us to download the Swift artefact:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true &quot;&gt;$ sudo apt-get install wget&lt;/pre&gt;
+
+&lt;p&gt;Then, let’s proceed to Swift itself:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true &quot;&gt;$ wget http://swift-arm.ddns.net/job/Swift-3.0-Pi3-ARM-Incremental/lastSuccessfulBuild/artifact/swift-3.0-2016-12-21-RPi23-ubuntu16.04.tar.gz&lt;/pre&gt;
+
+&lt;p&gt;Now, time to unarchive the Swift package:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true &quot;&gt;$ mkdir swift-3.0 &amp;amp;&amp;amp; cd swift-3.0
+$ tar -xvzf ../swift-3.0-2016-12-21-RPi23-ubuntu16.04.tar.gz&lt;/pre&gt;
+
+&lt;p&gt;And, finally, add the folder we’ve extracted swift to to our PATH:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true &quot;&gt;$ export PATH=$HOME/swift-3.0/usr/bin:$PATH&lt;/pre&gt;
+
+&lt;h2 id=&quot;5-dependencies&quot;&gt;5. Dependencies&lt;/h2&gt;
+
+&lt;p&gt;The installation is virtually over, but we need to install a number of dependencies needed by Swift at runtime.&lt;/p&gt;
+
+&lt;p&gt;Let’s launch the following command – and take the time to drink a long coffee. Or two.&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true &quot;&gt;$ sudo apt-get install -y libpython2.7 libxml2 libicu-dev clang-3.6 libcurl3
+$ sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-3.6 100
+$ sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-3.6 100&lt;/pre&gt;
+
+&lt;h2 id=&quot;6-verifying-your-installation&quot;&gt;6. Verifying your installation&lt;/h2&gt;
+
+&lt;p&gt;Still there? Let’s verify that our installation is correct. Upon running the following command&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true &quot;&gt;$ swift --version&lt;/pre&gt;
+
+&lt;p&gt;we should be greeted with the following line:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true&quot;&gt;Swift version 3.0.1-dev (LLVM a922364e5b, Clang 968470f170, Swift 0cca6668a2)
+&lt;/pre&gt;
+
+&lt;h2 id=&quot;7-our-first-project&quot;&gt;7. Our first project&lt;/h2&gt;
+
+&lt;p&gt;We’re finally taking the time to create and run a first empty project.&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true&quot;&gt;$ cd $HOME
+$ mkdir proj &amp;amp;&amp;amp; cd proj
+$ swift package init --type executable
+$ swift build
+&lt;/pre&gt;
+
+&lt;p&gt;And let’s finally run it:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true &quot;&gt;$ .build/debug/proj&lt;/pre&gt;
+
+&lt;h2 id=&quot;acknowledgements&quot;&gt;Acknowledgements&lt;/h2&gt;
+
+&lt;p&gt;This article would not have been possible without the work of many developers from the iOS and Swift community, some of them being:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Joe (&lt;a href=&quot;https://twitter.com/iachievedit&quot;&gt;@iachievedit&lt;/a&gt;) &lt;a href=&quot;http://dev.iachieved.it&quot;&gt;http://dev.iachieved.it&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;William Dillon (&lt;a href=&quot;https://twitter.com/hpux735&quot;&gt;@hpux735&lt;/a&gt;) &lt;a href=&quot;http://www.housedillon.com/&quot;&gt;http://www.housedillon.com&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Ryan Lovelett (&lt;a href=&quot;https://twitter.com/rlovelett&quot;&gt;@rlovelett) &lt;/a&gt;&lt;a href=&quot;http://stackoverflow.com/users/247730/ryan&quot;&gt;http://stackoverflow.com/users/247730/ryan&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Brian Gesiak (&lt;a href=&quot;https://twitter.com/modocache&quot;&gt;@modocache&lt;/a&gt;) &lt;a href=&quot;http://modocache.io/&quot;&gt;http://modocache.io&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/karwa&quot;&gt;Karl Wagner&lt;/a&gt; &lt;a href=&quot;http://www.springsup.com/&quot;&gt;http://www.springsup.com/&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://twitter.com/tienex&quot;&gt;@tienex&lt;/a&gt; &lt;a href=&quot;https://github.com/tienex&quot;&gt;tienex&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;PJ Gray (&lt;a href=&quot;https://twitter.com/pj4533&quot;&gt;@pj4533&lt;/a&gt;) &lt;a href=&quot;http://saygoodnight.com/&quot;&gt;Say Goodnight Software&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Cameron Perry (&lt;a href=&quot;https://twitter.com/mistercameron&quot;&gt;@mistercameron&lt;/a&gt;) &lt;a href=&quot;http://mistercameron.com/&quot;&gt;http://mistercameron.com&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h2&gt;
+
+&lt;p&gt;That’s all for today! We now have our foundation block for controlling the GPIO of our Raspberry PI. That said, this setup is already sufficient for running Swift code and, even, a local Web Server through Web Frameworks like Kitura or Vapor. But let’s stick to our goal: next up, SwiftyGPIO.&lt;/p&gt;</content><author><name>Simone Civetta</name></author><summary type="html">In this article we will discover how to use the Swift programming language to write software running on our Raspberry PI. We’ll be reading and writing through the GPIO of our board, connecting a number of widely available components and, at the same time, interacting with a remote sever. Here, I’ll be covering how to get started with Swift on a Raspberry PI board.</summary></entry><entry><title type="html">Leveraging Swift Code Coverage with Xcode 7</title><link href="http://viteinfinite.com/viteinfinitecom/2015/07/leveraging-swift-code-coverage-with-xcode-7/" rel="alternate" type="text/html" title="Leveraging Swift Code Coverage with Xcode 7" /><published>2015-07-24T13:25:59+00:00</published><updated>2015-07-24T13:25:59+00:00</updated><id>http://viteinfinite.com/viteinfinitecom/2015/07/leveraging-swift-code-coverage-with-xcode-7</id><content type="html" xml:base="http://viteinfinite.com/viteinfinitecom/2015/07/leveraging-swift-code-coverage-with-xcode-7/">&lt;p&gt;One of the WWDC 2015 announcements that &lt;del&gt;surprised&lt;/del&gt; interested us the most has definitely been the support for &lt;strong&gt;code coverage for the Swift language&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;In this article we will understand the advantages of the new code coverage functionality introduced in Xcode 7 and how to integrate such KPI in our daily work.&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;hr /&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;French speakers: the original version of this article is actually French, and you can &lt;a href=&quot;http://blog.xebia.fr/2015/07/20/exploitons-la-couverture-de-code-en-swift/&quot;&gt;read it on Xebia’s excellent blog&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Also, this article is the text version of the talk “Leveraging Xcode Code Coverage”, presented at the &lt;a href=&quot;https://mo.dev.by&quot;&gt;Mobile Optimized conference in Minsk&lt;/a&gt;, whose &lt;a href=&quot;https://speakerdeck.com/viteinfinite/leveraging-xcode-code-coverage&quot;&gt;slides are available here&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;Code coverage is a metric that measures the value of our tests by identifying what code is executed when running them and, above all, what portions of our project are untested.&lt;/p&gt;
+
+&lt;h2 id=&quot;how-it-works&quot;&gt;How it works?&lt;/h2&gt;
+
+&lt;p&gt;The production of code coverage information is done in two passes:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;At compile time, the compiler prepares the files for analysis&lt;/li&gt;
+  &lt;li&gt;At runtime, the lines of code affected by the tests are annotated in a specific file&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h1 id=&quot;xcode-code-coverage-before-june-2015&quot;&gt;Xcode code coverage before June 2015&lt;/h1&gt;
+
+&lt;p&gt;&lt;span style=&quot;line-height: 1.714285714; font-size: 1rem;&quot;&gt;Before WWDC 2015, only the Objective-C code coverage was supported by Apple’s tools, while Swift had been left behind. Also, the Objective-C support was sometimes inconsistent and required a few tricks to get the information.&lt;/span&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;how-did-it-work&quot;&gt;How did it work?&lt;/h2&gt;
+
+&lt;p&gt;The procedure necessary to retrieve the information was a variant of the one used by gcov, included in the gcc tools. Two settings had to be added to the Build Settings:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;em&gt;Generate test coverage files&lt;/em&gt;, which corresponds to the &lt;span class=&quot;lang:default decode:true  crayon-inline&quot;&gt;-ftest-coverage&lt;/span&gt; gcc flag&lt;/li&gt;
+  &lt;li&gt;&lt;em&gt;Instrument program flow&lt;/em&gt;, corresponding to &lt;span class=&quot;lang:default decode:true  crayon-inline &quot;&gt;-fprofile-arcs&lt;/span&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;The former allows the creation of the &lt;em&gt;.gcno&lt;/em&gt; files, which contain the information needed to build the execution graph and reconstruct the line numbers.&lt;/p&gt;
+
+&lt;p&gt;The latter, &lt;em&gt;Instrument program flow&lt;/em&gt;, deals with the creation oft the &lt;em&gt;.gcda&lt;/em&gt; files, which contain the number of transitions on different arcs of the graph and other summary information.&lt;/p&gt;
+
+&lt;p&gt;In order to force the generation of these command line data, it was possible to use the following command:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true&quot;&gt;GCC_INSTRUMENT_PROGRAM_FLOW_ARCS=YES
+    GCC_GENERATE_TEST_COVERAGE_FILES= YES
+    xcodebuild [...]
+    test
+&lt;/pre&gt;
+
+&lt;h2 id=&quot;exploiting-the-data&quot;&gt;Exploiting the data&lt;/h2&gt;
+
+&lt;p&gt;A number of tools for reading and exporting reports exist, but in particular, we used the following:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Coverstory&lt;/strong&gt;, a GUI tool to read files “.gcda” and “.gcno”&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;gcovr&lt;/strong&gt; translates these files Cobertura XML format&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;lcov&lt;/strong&gt; generates a visual report in a navigable HTML&lt;/li&gt;
+  &lt;li&gt;and, especially, &lt;strong&gt;Slather&lt;/strong&gt;.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;slather&quot;&gt;Slather&lt;/h3&gt;
+
+&lt;p&gt;Slather, developed by the SF-based company Venmo, exports the code coverage data in a number of different formats, including Gutter JSON, Cobertura XML, HTML and plain text. In addition, it integrates easily with other platforms, such as Jenkins, Travis CI, Circle CI and coveralls.&lt;/p&gt;
+
+&lt;p&gt;As said, one of the major assets of Slather is its ease of configuration and integration within a continuous integration system. Slather is open source, and available here at &lt;a href=&quot;http://github.com/venmo/Slather&quot;&gt;Venmo’s GitHub repo&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;swiftcov&quot;&gt;Swiftcov&lt;/h3&gt;
+
+&lt;p&gt;A recent tool for collecting Swift coverage information is &lt;a href=&quot;https://github.com/realm/SwiftCov&quot;&gt;Swiftcov&lt;/a&gt;, developed by the guys at Realm. Swiftcov makes heavy use of LLDB breakpoints to detect which lines are affected by the execution of our tests.&lt;/p&gt;
+
+&lt;h1 id=&quot;code-coverage-after-june-2015&quot;&gt;Code coverage after June 2015&lt;/h1&gt;
+
+&lt;p&gt;During the WWDC 2015 keynote, Apple announced that Xcode 7 would introduce support of code coverage for our beloved Swift.&lt;/p&gt;
+
+&lt;h2 id=&quot;how-does-it-work&quot;&gt;How does it work?&lt;/h2&gt;
+
+&lt;p&gt;A completely new format has been introduced, named profdata, thus making&lt;/p&gt;
+
+&lt;p&gt;gcov legacy – at least for what concerns projects developed with Apple’s development tools.&lt;/p&gt;
+
+&lt;p&gt;In other words, starting from the very first beta of Xcode 7, profdata is intended to replace completely gcov for both Swift and Objective-C.&lt;/p&gt;
+
+&lt;p&gt;In order to enable the setting, from Xcode 7, you will need to access the “scheme” setting and, in the “Test” tab, to tick the “Gather coverage data” checkbox.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://viteinfinite.com/wp-content/uploads/2015/07/collect_coverage_annotated.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;As for the command line, xcodebuild now ships with a new parameter, &lt;span class=&quot;lang:default decode:true  crayon-inline&quot;&gt;-enableCodeCoverage&lt;/span&gt;, which can be used as follows:&lt;/p&gt;
+
+&lt;pre class=&quot;lang:sh decode:true&quot;&gt;xcodebuild
+    -scheme MoDevByProject
+    -destination &quot;name=iPhone 6,OS=latest&quot;
+    -enableCodeCoverage YES
+    test
+&lt;/pre&gt;
+
+&lt;p&gt;Once the tests run, coverage information is immediately available in Xcode, on the right side of the code editor (see image below) and, in particular, in the “Report Navigator”.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://viteinfinite.com/wp-content/uploads/2015/07/Screen-Shot-2015-07-24-at-15.03.52.png&quot; alt=&quot;&quot; /&gt;
+&lt;em&gt;Inline code coverage information&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://viteinfinite.com/wp-content/uploads/2015/07/Screen-Shot-2015-07-14-at-11.41.36.png&quot; alt=&quot;&quot; /&gt;
+&lt;em&gt;The new Report Navigator&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;The Report Navigator shows in detail which classes are covered by our tests and, by expanding the selection, which methods are actually used.&lt;/p&gt;
+
+&lt;h2 id=&quot;exploiting-the-data-1&quot;&gt;Exploiting the data&lt;/h2&gt;
+
+&lt;p&gt;Apple’s work hasn’t only consisted in enhancing Xcode but, also, in extending the features of the  &lt;span class=&quot;lang:default decode:true  crayon-inline&quot;&gt;llvm-cov&lt;/span&gt; command line tool, which allows working with .profdata format.&lt;/p&gt;
+
+&lt;p&gt;The &lt;span class=&quot;lang:default decode:true  crayon-inline &quot;&gt;llvm-cov show&lt;/span&gt; command, for instance, allows exporting plain text coverage information and outputs annotated source code files, which can be easily read and processed.&lt;/p&gt;
+
+&lt;h3 id=&quot;slather-returns&quot;&gt;Slather (returns)&lt;/h3&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/venmo/slather/pull/92&quot;&gt;A recent Pull Request&lt;/a&gt; allows Slather to work with profdata files and convert them to other formats, thus enabling the integration with the other platforms supported by the tool.&lt;/p&gt;
+
+&lt;h3 id=&quot;xcode-server&quot;&gt;Xcode Server&lt;/h3&gt;
+
+&lt;p&gt;If you are thinking about setting up an automated integration system, aside from the excellent Jenkins, Travis or Circle CI, it is perhaps time to start taking into consideration Xcode Server, which is part of the OS X Server bundle, distributed free of charge by Apple.&lt;/p&gt;
+
+&lt;p&gt;With the new version of Xcode bots and Xcode Server, it is now possible to support code coverage values ​​and to display the results in a Web browser. The reports are also available in the “Big Screen” presentation, useful for presenting your content in a simplified yet effective overview.&lt;/p&gt;
+
+&lt;p&gt;In order to enable this workflow, you could follow the steps below:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Install OS X server&lt;/li&gt;
+  &lt;li&gt;Enable “Xcode” and “Websites” services&lt;/li&gt;
+  &lt;li&gt;Create a new project and assign a Source Control Manager to it (such as git)&lt;/li&gt;
+  &lt;li&gt;In Xcode, create an Xcode bot under “Product &amp;gt; Create Bot”&lt;/li&gt;
+  &lt;li&gt;Select the frequency of integration and enable code coverage (see image below) next to the caption “Code Coverage”.&lt;/li&gt;
+  &lt;li&gt;Launch an integration&lt;/li&gt;
+  &lt;li&gt;Open the web browser at the host indicated by your instance of Mac OS.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;img src=&quot;http://viteinfinite.com/wp-content/uploads/2015/07/bot_coverage.png&quot; alt=&quot;&quot; /&gt;
+&lt;em&gt;Xcode Bot creation panel&lt;/em&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h1&gt;
+
+&lt;p&gt;Code coverage is very useful to keep under control your code base health status. Although it can not replace your developer confidence in well designed, well structured apps, this metric can help write better code by encouraging you to give yourself concrete goals day by day.&lt;/p&gt;
+
+&lt;p&gt;Also, and finally, the new tools offered by Apple can now allow you to keep under control these values ​​in minutes, with a simple and immediate configuration.&lt;/p&gt;</content><author><name>Simone Civetta</name></author><summary type="html">One of the WWDC 2015 announcements that surprised interested us the most has definitely been the support for code coverage for the Swift language. In this article we will understand the advantages of the new code coverage functionality introduced in Xcode 7 and how to integrate such KPI in our daily work.</summary></entry><entry><title type="html">Carthage</title><link href="http://viteinfinite.com/viteinfinitecom/2015/02/carthage/" rel="alternate" type="text/html" title="Carthage" /><published>2015-02-13T20:26:19+00:00</published><updated>2015-02-13T20:26:19+00:00</updated><id>http://viteinfinite.com/viteinfinitecom/2015/02/carthage</id><content type="html" xml:base="http://viteinfinite.com/viteinfinitecom/2015/02/carthage/">&lt;p&gt;Yesterday I talked about Carthage at CocoaHeads Paris. Here are the slides of my presentation, in French: &lt;a href=&quot;https://speakerdeck.com/viteinfinite/carthage&quot;&gt;https://speakerdeck.com/viteinfinite/carthage&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Even if I am not involved in the project, I believe Carthage has some great potential, I really like the minimalist approach and, in particular the fact that developers can keep control over what really happens when you add an external dependency.&lt;/p&gt;
+
+&lt;p&gt;The idea of using committed xcodeprojs to retrieve informations about the build is quite good, even if it obviously requires to have a shared scheme – which it’s not the case for the majority of project so far.&lt;/p&gt;
+
+&lt;p&gt;I’m looking forward to see more and more libraries supporting Carthage though even if for now, at least for client work, I’ll stick with CocoaPods.&lt;/p&gt;
+
+&lt;p&gt; &lt;/p&gt;</content><author><name>Simone Civetta</name></author><summary type="html">Yesterday I talked about Carthage at CocoaHeads Paris. Here are the slides of my presentation, in French: https://speakerdeck.com/viteinfinite/carthage. Even if I am not involved in the project, I believe Carthage has some great potential, I really like the minimalist approach and, in particular the fact that developers can keep control over what really happens when you add an external dependency. The idea of using committed xcodeprojs to retrieve informations about the build is quite good, even if it obviously requires to have a shared scheme – which it’s not the case for the majority of project so far. I’m looking forward to see more and more libraries supporting Carthage though even if for now, at least for client work, I’ll stick with CocoaPods.  </summary></entry><entry><title type="html">Be the Quality you Want to See in the World – Code Quality Metrics</title><link href="http://viteinfinite.com/viteinfinitecom/2014/10/be-the-quality-you-want-to-see-in-the-world-code-quality-metrics/" rel="alternate" type="text/html" title="Be the Quality you Want to See in the World – Code Quality Metrics" /><published>2014-10-13T15:25:04+00:00</published><updated>2014-10-13T15:25:04+00:00</updated><id>http://viteinfinite.com/viteinfinitecom/2014/10/be-the-quality-you-want-to-see-in-the-world-code-quality-metrics</id><content type="html" xml:base="http://viteinfinite.com/viteinfinitecom/2014/10/be-the-quality-you-want-to-see-in-the-world-code-quality-metrics/">&lt;p&gt;I somehow forgot to publish the slides on this blog. You can &lt;a href=&quot;https://speakerdeck.com/viteinfinite/be-the-quality-you-want-to-see-in-the-world-code-quality-metrics&quot;&gt;get them here&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;It’s been fun discussing with people about the subject. I think there is still a long way to go before having this integrated in the majority of the applicable projects, mostly because the setup process needs to be automated. Still, I believe it’s a step in the right direction.&lt;/p&gt;</content><author><name>Simone Civetta</name></author><summary type="html">I somehow forgot to publish the slides on this blog. You can get them here. It’s been fun discussing with people about the subject. I think there is still a long way to go before having this integrated in the majority of the applicable projects, mostly because the setup process needs to be automated. Still, I believe it’s a step in the right direction.</summary></entry><entry><title type="html">Some opinions about Calabash-iOS</title><link href="http://viteinfinite.com/viteinfinitecom/2014/01/some-opinions-about-calabash-ios/" rel="alternate" type="text/html" title="Some opinions about Calabash-iOS" /><published>2014-01-31T14:36:33+00:00</published><updated>2014-01-31T14:36:33+00:00</updated><id>http://viteinfinite.com/viteinfinitecom/2014/01/some-opinions-about-calabash-ios</id><content type="html" xml:base="http://viteinfinite.com/viteinfinitecom/2014/01/some-opinions-about-calabash-ios/">&lt;p&gt;For what concerns iOS my colleagues and I have been using Calabash-iOS for a year now, with mixed feelings.&lt;/p&gt;
+
+&lt;p&gt;Here is a totally subjective opinion about Pros and Cons of Calabash-iOS&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h2 id=&quot;pros&quot;&gt;Pros:&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Conciseness of the Gherkin language&lt;/li&gt;
+  &lt;li&gt;Capability of querying webviews with CSS selectors&lt;/li&gt;
+  &lt;li&gt;Access to all the object property values via Ruby&lt;/li&gt;
+  &lt;li&gt;built-in Jenkins-Ready output (xml and HTML test reports, mainly)&lt;/li&gt;
+  &lt;li&gt;Performance (on &amp;lt;= iOS 6)&lt;/li&gt;
+  &lt;li&gt;It does not uniquely rely on accessibilityIdentifiers (as KIF does)&lt;/li&gt;
+  &lt;li&gt;Actively mantained&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;cons&quot;&gt;Cons:&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;It’s not an Apple-backed project : functionalities change significantly from OS to OS&lt;/li&gt;
+  &lt;li&gt;Test fail randomly under certain circumstances and, in particular, when dealing with repeated scrolling on a UIScrollView (due to a poor implementation of the scroll/swipe functions)&lt;/li&gt;
+  &lt;li&gt;On iOS 7, it relies on UIAutomation, thus…&lt;/li&gt;
+  &lt;li&gt;…terrible performance on iOS 7 (see above)&lt;/li&gt;
+  &lt;li&gt;Once again, quite a Pain-in-the-ass to make it work on iOS 7&lt;/li&gt;
+  &lt;li&gt;Finding the good query for your element usually requires much trial-and-error via the calabash-ios console (Frank provides a nice UI tool for that task, but it’s not merged into Calabash-iOS yet)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Truth to be told, at this stage, the performance impact of relying on UIAutomation is deal breaker for me, so, on the next project we’ll be using &lt;a href=&quot;https://github.com/kif-framework/KIF&quot;&gt;KIF&lt;/a&gt;, which appears to be also used in &lt;a href=&quot;http://googletesting.blogspot.fr/2013/08/how-google-team-tests-mobile-apps.html&quot;&gt;some Google projects&lt;/a&gt;.&lt;/p&gt;</content><author><name>Simone Civetta</name></author><summary type="html">For what concerns iOS my colleagues and I have been using Calabash-iOS for a year now, with mixed feelings. Here is a totally subjective opinion about Pros and Cons of Calabash-iOS</summary></entry></feed>
