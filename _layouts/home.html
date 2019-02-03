@@ -33,12 +33,17 @@ layout: default
         {% for post in site.posts limit : 5 %}
 
           <article class="post-preview">
+            {% assign word_count = post.content | number_of_words %}
             <a href="{{ post.url | prepend: site.baseurl | replace: '//', '/' }}">
               <h2 class="post-title">{{ post.title }}</h2>
               {% if post.subtitle %}
                 <h3 class="post-subtitle">{{ post.subtitle }}</h3>
               {% else %}
-                <h3 class="post-subtitle">{{ post.excerpt | strip_html }}</h3>
+                {% if word_count <= 50 or post.always_show_full %}
+                  {{ post.content }}
+                {% else %}
+                  <h3 class="post-subtitle">{{ post.excerpt | strip_html }}</h3>
+                {% endif %}
               {% endif %}
             </a>
             <p class="post-meta">
@@ -49,9 +54,11 @@ layout: default
               {% endif %}
               {{ post.date | date: '%B %d, %Y' }}
             </p>
+            {% unless word_count <= 50 or post.always_show_full %}
             <p>
               <a href="{{ post.url | prepend: site.baseurl | replace: '//', '/' }}">Continue reading...</a>
             </p>
+            {% endunless %}
           </article>
 
           <hr>

@@ -13,10 +13,10 @@ background: '/img/bg-post.jpg'
       {% if post.subtitle %}
         <h3 class="post-subtitle">{{ post.subtitle }}</h3>
       {% else %}
-        {% if word_count > 50 %}
-          <h3 class="post-subtitle">{{ post.excerpt | strip_html }}</h3>
-        {% else %}
+        {% if word_count <= 50 or post.always_show_full %}
           {{ post.content }}
+        {% else %}
+          <h3 class="post-subtitle">{{ post.excerpt | strip_html }}</h3>
         {% endif %}
       {% endif %}
     </a>
@@ -28,11 +28,11 @@ background: '/img/bg-post.jpg'
       {% endif %}
       {{ post.date | date: '%B %d, %Y' }}
     </p>
-    {% if word_count > 50 %}
+    {% unless word_count <= 50 or post.always_show_full %}
     <p>
       <a href="{{ post.url | prepend: site.baseurl | replace: '//', '/' }}">Continue reading...</a>
     </p>
-    {% endif %}
+    {% endunless %}
   </article>
 
   <hr>
