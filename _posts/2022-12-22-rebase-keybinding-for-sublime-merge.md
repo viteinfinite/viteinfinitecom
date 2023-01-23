@@ -5,7 +5,6 @@ date: 2022-12-22T13:51:43+00:00
 layout: post
 guid: http://viteinfinite.com/?p=174576765
 permalink: /2022/12/rebase-key-bindings-for-sublime-merge/
-always_show_full: true
 categories:
   - Git
   - Development
