@@ -10,6 +10,10 @@ categories:
   - Development
 ---
 
+Editing Git history (or Interactive Rebasing) in Sublime Merge is a joy. And can be even better, with some keybindings!
+
+<!--more-->
+
 For the last couple of years, I've been happily using [Sublime Merge](https://www.sublimemerge.com/), the last Git interface from the creators of [Sublime Text](https://www.sublimetext.com/). 
 
 I personally find it super fast and I particularily like the 3-way merge interface as well as its command-oriented interface.

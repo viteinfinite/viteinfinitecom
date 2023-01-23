@@ -10,6 +10,9 @@ categories:
 ---
 
 I’m particularly glad to remark that 2023 is starting with a newfound energy - and new habits.
+
+<!--more-->
+
 It would not be true to say it’s the same seemingly limitless energy I had back in my twenties, but it feels extremely good to be content with what I do - and build - with my time.
 Since the end of 2022, I have been working with and experimenting more and more non-Swift technologies: Flutter, React, TypeScript, AWS, and last but not least Svelte, with which I’m currently building the Website for Andre’s baptism. I’m also enjoying adding new elements to my toolbelt: most notably to [Arc](https://arc.net), ChatGPT, [just](https://github.com/casey/just), [nushell](https://www.nushell.sh) and [Scriptable](https://scriptable.app).
 
