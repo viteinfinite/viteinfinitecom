@@ -1,7 +1,7 @@
 ---
 id: 2023-01-23-starting-2023-a-new-hope
-title: ‘Starting 2023 (A New Hope)’
-date: 2023-01-23T09:43:43+00:00
+title: 'Starting 2023 (A New Hope)'
+date: 2023-01-23T08:43:43+01:00
 layout: post
 permalink: /2023/01/starting-2023-a-new-hope
 always_show_full: false
