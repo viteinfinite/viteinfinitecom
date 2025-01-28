@@ -9,6 +9,7 @@ dsq_thread_id:
   - "1319323687"
 categories:
   - iOS Development
+  - Mobile Development
 ---
 
 When dealing with complex object creation in an iOS application you may feel the need for a cleaner and more fluent approach.

@@ -8,7 +8,8 @@ permalink: /2014/10/be-the-quality-you-want-to-see-in-the-world-code-quality-met
 dsq_thread_id:
   - "3112656362"
 categories:
-  - Uncategorized
+  - iOS Development
+  - Mobile Development
 ---
 I somehow forgot to publish the slides on this blog. You can [get them here](https://speakerdeck.com/viteinfinite/be-the-quality-you-want-to-see-in-the-world-code-quality-metrics).
 

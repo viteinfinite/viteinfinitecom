@@ -8,7 +8,8 @@ permalink: /2013/05/how-to-resolve-unable-to-start-status-bar-server-failed-to-c
 dsq_thread_id:
   - "1311130603"
 categories:
-  - Uncategorized
+  - iOS Development
+  - Mobile Development
 ---
 Ever wondered how to resolve the following error while executing GHUnitTest by Command Line?
 

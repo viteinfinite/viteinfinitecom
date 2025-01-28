@@ -8,7 +8,8 @@ permalink: /2013/06/rediscovering-uicollectionviews/
 dsq_thread_id:
   - "1408135037"
 categories:
-  - Uncategorized
+  - iOS Development
+  - Mobile Development
 ---
 
 While working on one of my latest projects, I found myself struggling with a sort of animated image gallery with some nice and useless transition effects as shown in the image below.

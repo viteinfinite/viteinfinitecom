@@ -9,6 +9,7 @@ dsq_thread_id:
   - "2200352410"
 categories:
   - iOS Development
+  - Mobile Development
 ---
 
 For what concerns iOS my colleagues and I have been using Calabash-iOS for a year now, with mixed feelings.

@@ -9,6 +9,7 @@ always_show_full: true
 categories:
   - iOS Development
   - Kotlin
+  - Mobile Development
 ---
 
 With the [recently announced](https://blog.jetbrains.com/kotlin/2018/10/kotlin-1-3/) Kotlin 1.3 comes a massive overhaul of Kotlin Multiplatform and a new DSL for creating projects capable of sharing code between different platforms, such as Kotlin for JVM, Kotlin for JavaScript and Kotlin/Native.

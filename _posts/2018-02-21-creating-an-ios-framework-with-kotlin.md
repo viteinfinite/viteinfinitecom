@@ -8,6 +8,7 @@ permalink: /2018/02/creating-an-ios-framework-with-kotlin/
 categories:
   - iOS Development
   - Kotlin
+  - Mobile Development
 ---
 
 <a href="https://kotlinlang.org/docs/reference/native-overview.html">Kotlin/Native</a> is a new Kotlin dialect which supports compiling code in an executable form that can be run on the targeted system, without needing for a JVM. The Kotlin/Native compiler, named Konan, interfaces with the LLVM compiler infrastructure in order to support a number of targets, such as Linux, macOS, iOS, Web Assembly and others.

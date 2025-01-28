@@ -9,6 +9,7 @@ dsq_thread_id:
   - "1785219175"
 categories:
   - iOS Development
+  - Mobile Development
 ---
 
 After upgrading to XCode 5 my Jenkins Continuous Integration machine over at Xebia stopped executing command-line GHUnit tests under some apparently random conditions. The console output was as follows:

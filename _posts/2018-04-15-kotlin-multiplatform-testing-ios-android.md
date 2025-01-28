@@ -8,6 +8,7 @@ permalink: /2018/04/kotlin-multiplatform-testing-ios-android/
 categories:
   - iOS Development
   - Kotlin
+  - Mobile Development
 ---
 
 Conceiving your app as modular can be greatly beneficial to your codebase’s health. In particular, designing a separation between your view and business logic can decrease the coupling between your layers and improve maintainability as well as testability. Tests are indeed your app’s best friends, as they can, at the same time, verify the code you wrote works as intended and act as a specification for the implemented functionality.

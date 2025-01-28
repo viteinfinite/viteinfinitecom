@@ -10,6 +10,7 @@ dsq_thread_id:
 categories:
   - iOS Development
   - Kotlin
+  - Mobile Development
 ---
 
 Kotlin Native 0.4 is out since the beginning of November and, with it, some nice sample iOS demo apps to be run into your favourite iOS device. That sounds amazing, even for some hardcore Swift fans like me. Yet, there’s a catch: the sample apps can only run on a _real_ iOS device but not in the Simulator. Sure, that’s just an unsignificant drawback compared to what the Kotlin Native team achieved so far. Still, I’m a huge fan of the iOS Simulator, as it’s by far the fastest way to do some quick testing of an app while doing a pretty good job in mimicking the behaviour of an app on a real device.

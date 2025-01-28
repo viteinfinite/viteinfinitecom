@@ -8,7 +8,7 @@ permalink: /2017/02/swift-on-the-raspberry-pi-part-1/
 dsq_thread_id:
   - "5534253417"
 categories:
-  - Uncategorized
+  - Swift
 ---
 In this article we will discover how to use the Swift programming language to write software running on our Raspberry PI. We’ll be reading and writing through the GPIO of our board, connecting a number of widely available components and, at the same time, interacting with a remote sever.
 

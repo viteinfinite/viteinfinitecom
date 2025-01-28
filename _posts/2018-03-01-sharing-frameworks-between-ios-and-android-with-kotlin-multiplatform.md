@@ -8,6 +8,7 @@ permalink: /2018/03/sharing-frameworks-between-ios-and-android-with-kotlin-multi
 categories:
   - iOS Development
   - Kotlin
+  - Mobile Development
 ---
 
 Today we’ll see how to use Kotlin code to write a cross platform module that can be shared between an iOS and an Android app.

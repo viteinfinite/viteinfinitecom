@@ -13,6 +13,8 @@ tags:
   - cocoapods
   - pod
   - smwheelcontrol
+  - iOS Development
+  - Mobile Development
 ---
 
 Today I am proud to announce the availability of a new Pod for iOS which will be included in my forthcoming app.

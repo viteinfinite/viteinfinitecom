@@ -11,6 +11,7 @@ categories:
   - Uncategorized
 tags:
   - iOS Development
+  - Mobile Development
 ---
 
 Let’s say we would like to share some Xcode environment variables across multiple targets in a project configured with CocoaPods. For instance, we would to use the same app version number across our development and distribution targets in order not to retype the same values for each version bump over and over again.

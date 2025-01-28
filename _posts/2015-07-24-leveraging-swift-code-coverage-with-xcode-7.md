@@ -9,6 +9,7 @@ dsq_thread_id:
   - "3966420505"
 categories:
   - iOS Development
+  - Mobile Development
 ---
 
 One of the WWDC 2015 announcements that <del>surprised</del> interested us the most has definitely been the support for **code coverage for the Swift language**.
